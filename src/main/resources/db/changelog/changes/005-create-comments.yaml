@@ -1,0 +1,38 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-create-comments
+      author: nikita
+      changes:
+        - createTable:
+            tableName: comments
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: task_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_comments_task
+                    references: tasks(id)
+              - column:
+                  name: author_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_comments_author
+                    references: project_members(id)
+              - column:
+                  name: text
+                  type: varchar(2000)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false

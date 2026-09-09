@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/changes/001-create-users.yaml
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/changes/002-create-projects.yaml
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/changes/003-create-project-members.yaml
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/changes/004-create-tasks.yaml
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/changes/005-create-comments.yaml
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/changes/006-create-refresh-tokens.yaml
+      relativeToChangelogFile: false

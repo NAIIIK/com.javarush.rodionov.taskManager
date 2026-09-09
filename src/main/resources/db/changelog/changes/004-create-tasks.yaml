@@ -1,0 +1,59 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-create-tasks
+      author: nikita
+      changes:
+        - createTable:
+            tableName: tasks
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: project_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_tasks_project
+                    references: projects(id)
+              - column:
+                  name: title
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(2000)
+              - column:
+                  name: status
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: priority
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: assignee_id
+                  type: uuid
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_tasks_assignee
+                    references: project_members(id)
+              - column:
+                  name: due_date
+                  type: date
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
