@@ -8,8 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ProjectMemberRepository extends JpaRepository<ProjectMember, UUID> {
     Optional<ProjectMember> findByProjectIdAndUserId(UUID projectId, UUID userId);
 
-    List<ProjectMember> findAllByProjectId(UUID projectId);
-
     List<ProjectMember> findAllByUserId(UUID userId);
 
     boolean existsByProjectIdAndUserId(UUID projectId, UUID userId);
