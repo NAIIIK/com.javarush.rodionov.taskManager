@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: com.javarush.rodionov.taskManager
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/taskmanager
+    username: taskmanager
+    password: taskmanager
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:change-me-in-env-this-is-only-for-local-dev-min-32-bytes}
+    access-ttl-minutes: 30
+    refresh-ttl-days: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: INFO
+    com.javarush.taskmanager: DEBUG
+    org.hibernate.SQL: WARN
