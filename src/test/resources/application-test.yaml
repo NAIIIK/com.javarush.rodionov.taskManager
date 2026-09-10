@@ -1,0 +1,20 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+  liquibase:
+    enabled: true
+
+security:
+  jwt:
+    secret: test-secret-key-minimum-32-bytes-long-for-hmac
+    access-ttl-minutes: 30
+    refresh-ttl-days: 30
+
+logging:
+  level:
+    root: WARN
+    com.javarush.taskmanager: DEBUG
+    org.hibernate.SQL: DEBUG
