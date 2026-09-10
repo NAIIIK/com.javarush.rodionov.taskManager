@@ -1,5 +1,7 @@
 package com.javarush.taskmanager.security;
 
+import com.javarush.taskmanager.logging.annotation.Sensitive;
+import com.javarush.taskmanager.logging.annotation.SensitiveResult;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -26,6 +28,7 @@ public class JwtService {
         this.accessTokenTtlMillis = accessTtlMinutes * 60 * 1000;
     }
 
+    @SensitiveResult
     public String generateAccessToken(UUID userId, String email, String globalRole) {
         Instant now = Instant.now();
         return Jwts.builder()
@@ -40,11 +43,11 @@ public class JwtService {
                 .compact();
     }
 
-    public UUID extractUserId(String token) {
+    public UUID extractUserId(@Sensitive String token) {
         return UUID.fromString(extractClaim(token, Claims::getSubject));
     }
 
-    public boolean isTokenValid(String token) {
+    public boolean isTokenValid(@Sensitive String token) {
         try {
             extractAllClaims(token);
             return !isTokenExpired(token);
