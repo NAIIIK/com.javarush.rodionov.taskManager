@@ -5,6 +5,8 @@ import com.javarush.taskmanager.auth.dto.LoginRequest;
 import com.javarush.taskmanager.auth.dto.RefreshRequest;
 import com.javarush.taskmanager.auth.dto.RegisterRequest;
 import com.javarush.taskmanager.exception.InvalidCredentialsException;
+import com.javarush.taskmanager.logging.annotation.Sensitive;
+import com.javarush.taskmanager.logging.annotation.SensitiveResult;
 import com.javarush.taskmanager.security.JwtService;
 import com.javarush.taskmanager.user.GlobalRole;
 import com.javarush.taskmanager.user.User;
@@ -33,6 +35,7 @@ public class AuthService {
     private long refreshTokenTtlDays;
 
     @Transactional
+    @SensitiveResult
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new IllegalStateException("Email already in use: " + request.email());
@@ -51,6 +54,7 @@ public class AuthService {
     }
 
     @Transactional
+    @SensitiveResult
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(InvalidCredentialsException::new);
@@ -63,7 +67,8 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse refresh(RefreshRequest request) {
+    @SensitiveResult
+    public AuthResponse refresh(@Sensitive RefreshRequest request) {
         String hash = hash(request.refreshToken());
         RefreshToken stored = refreshTokenRepository.findByTokenHash(hash)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
@@ -79,7 +84,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(RefreshRequest request) {
+    public void logout(@Sensitive RefreshRequest request) {
         String hash = hash(request.refreshToken());
         refreshTokenRepository.findByTokenHash(hash)
                 .ifPresent(token -> {
