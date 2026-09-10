@@ -4,6 +4,7 @@ import com.javarush.taskmanager.auth.dto.AuthResponse;
 import com.javarush.taskmanager.auth.dto.LoginRequest;
 import com.javarush.taskmanager.auth.dto.RefreshRequest;
 import com.javarush.taskmanager.auth.dto.RegisterRequest;
+import com.javarush.taskmanager.exception.InvalidCredentialsException;
 import com.javarush.taskmanager.security.JwtService;
 import com.javarush.taskmanager.user.GlobalRole;
 import com.javarush.taskmanager.user.User;
@@ -22,8 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-
-    private static final String INVALID_CREDENTIALS_MSG = "Invalid credentials";
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -54,10 +53,10 @@ public class AuthService {
     @Transactional
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new IllegalArgumentException(INVALID_CREDENTIALS_MSG));
+                .orElseThrow(InvalidCredentialsException::new);
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new IllegalArgumentException(INVALID_CREDENTIALS_MSG);
+            throw new InvalidCredentialsException();
         }
 
         return issueTokens(user);
