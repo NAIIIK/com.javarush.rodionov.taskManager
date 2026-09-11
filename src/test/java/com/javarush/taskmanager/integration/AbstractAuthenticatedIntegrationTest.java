@@ -15,7 +15,7 @@ public abstract class AbstractAuthenticatedIntegrationTest extends AbstractInteg
     protected JsonMapper jsonMapper;
 
     protected String registerAndLogin(String email) throws Exception {
-        RegisterRequest request = new RegisterRequest(email, "password123", "First", "Last");
+        RegisterRequest request = new RegisterRequest(email, DEFAULT_PASSWORD, "First", "Last");
 
         MvcResult result = mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
