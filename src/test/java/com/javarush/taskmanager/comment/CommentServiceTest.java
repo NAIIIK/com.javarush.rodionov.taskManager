@@ -13,6 +13,8 @@ import com.javarush.taskmanager.task.TaskRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.javarush.taskmanager.util.ExceptionMessages;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,6 +30,8 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CommentServiceTest {
+
+    private static final String COMMENT_MSG = "Looks good";
 
     @Mock
     private CommentRepository commentRepository;
@@ -55,7 +59,7 @@ class CommentServiceTest {
         Project project = Project.builder().id(projectId).build();
         Task task = Task.builder().id(taskId).project(project).build();
         ProjectMember author = ProjectMember.builder().id(UUID.randomUUID()).role(ProjectRole.MEMBER).build();
-        CreateCommentRequest request = new CreateCommentRequest("Looks good");
+        CreateCommentRequest request = new CreateCommentRequest(COMMENT_MSG);
 
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
         when(projectMemberRepository.findByProjectIdAndUserId(projectId, requesterId))
@@ -65,7 +69,7 @@ class CommentServiceTest {
 
         CommentResponse response = commentService.addComment(taskId, requesterId, request);
 
-        assertThat(response.text()).isEqualTo("Looks good");
+        assertThat(response.text()).isEqualTo(COMMENT_MSG);
         assertThat(response.authorId()).isEqualTo(author.getId());
     }
 
@@ -76,10 +80,10 @@ class CommentServiceTest {
         UUID requesterId = UUID.randomUUID();
         Project project = Project.builder().id(projectId).build();
         Task task = Task.builder().id(taskId).project(project).build();
-        CreateCommentRequest request = new CreateCommentRequest("Looks good");
+        CreateCommentRequest request = new CreateCommentRequest(COMMENT_MSG);
 
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
-        doThrow(new AccessDeniedException("You are not a member of this project"))
+        doThrow(new AccessDeniedException(ExceptionMessages.NOT_A_MEMBER_MSG))
                 .when(projectAccessGuard).requireMembership(projectId, requesterId);
 
         assertThatThrownBy(() -> commentService.addComment(taskId, requesterId, request))
@@ -90,7 +94,7 @@ class CommentServiceTest {
     void addComment_taskNotFound_throwsResourceNotFound() {
         UUID taskId = UUID.randomUUID();
         UUID requesterId = UUID.randomUUID();
-        CreateCommentRequest request = new CreateCommentRequest("Looks good");
+        CreateCommentRequest request = new CreateCommentRequest(COMMENT_MSG);
         when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> commentService.addComment(taskId, requesterId, request))
@@ -104,16 +108,16 @@ class CommentServiceTest {
         UUID requesterId = UUID.randomUUID();
         Project project = Project.builder().id(projectId).build();
         Task task = Task.builder().id(taskId).project(project).build();
-        Comment comment = Comment.builder().id(UUID.randomUUID()).task(task).text("Hi").build();
+        Comment comment = Comment.builder().id(UUID.randomUUID()).task(task).text(COMMENT_MSG).build();
 
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
         when(commentRepository.findAllByTaskId(taskId)).thenReturn(List.of(comment));
         when(commentMapper.toResponse(comment))
-                .thenReturn(new CommentResponse(comment.getId(), taskId, null, "Hi", null));
+                .thenReturn(new CommentResponse(comment.getId(), taskId, null, COMMENT_MSG, null));
 
         List<CommentResponse> responses = commentService.getComments(taskId, requesterId);
 
         assertThat(responses).hasSize(1);
-        assertThat(responses.getFirst().text()).isEqualTo("Hi");
+        assertThat(responses.getFirst().text()).isEqualTo(COMMENT_MSG);
     }
 }

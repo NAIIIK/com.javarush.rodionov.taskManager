@@ -11,6 +11,9 @@ import com.javarush.taskmanager.user.User;
 import com.javarush.taskmanager.user.UserRepository;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.javarush.taskmanager.util.ExceptionMessages;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,6 +31,15 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {
+
+    private static final String OWNER_EMAIL = "owner@example.com";
+    private static final String PROJECT_NAME = "New Project";
+    private static final String PROJECT_DESCRIPTION = "Description";
+    private static final String EXISTING_PROJECT_NAME = "Existing";
+
+    private final UUID projectId = UUID.randomUUID();
+    private final UUID ownerId = UUID.randomUUID();
+    private final UUID requesterId = UUID.randomUUID();
 
     @Mock
     private ProjectRepository projectRepository;
@@ -47,27 +59,41 @@ class ProjectServiceTest {
     @InjectMocks
     private ProjectService projectService;
 
+    private User owner;
+    private Project project;
+
+    @BeforeEach
+    void setUp() {
+        owner = User.builder()
+                .id(ownerId)
+                .email(OWNER_EMAIL)
+                .globalRole(GlobalRole.USER)
+                .build();
+
+        project = Project.builder()
+                .id(projectId)
+                .name(EXISTING_PROJECT_NAME)
+                .build();
+    }
+
     @Test
     void createProject_ownerExists_createsProjectAndOwnerMembership() {
-        UUID ownerId = UUID.randomUUID();
-        User owner = User.builder().id(ownerId).email("owner@example.com").globalRole(GlobalRole.USER).build();
-        CreateProjectRequest request = new CreateProjectRequest("New Project", "Description");
+        CreateProjectRequest request = new CreateProjectRequest(PROJECT_NAME, PROJECT_DESCRIPTION);
 
         when(userRepository.findById(ownerId)).thenReturn(Optional.of(owner));
         when(projectMapper.toResponse(any(Project.class)))
-                .thenReturn(new ProjectResponse(UUID.randomUUID(), "New Project", "Description", ownerId, null));
+                .thenReturn(createProjectResponse(projectId, PROJECT_NAME, PROJECT_DESCRIPTION, ownerId));
 
         ProjectResponse response = projectService.createProject(ownerId, request);
 
-        assertThat(response.name()).isEqualTo("New Project");
-        verify(projectRepository).save(argThat(p -> p.getOwner().equals(owner) && p.getName().equals("New Project")));
+        assertThat(response.name()).isEqualTo(PROJECT_NAME);
+        verify(projectRepository).save(argThat(p -> p.getOwner().equals(owner) && p.getName().equals(PROJECT_NAME)));
         verify(projectMemberRepository).save(argThat(m -> m.getRole() == ProjectRole.OWNER && m.getUser().equals(owner)));
     }
 
     @Test
     void createProject_ownerNotFound_throwsResourceNotFound() {
-        UUID ownerId = UUID.randomUUID();
-        CreateProjectRequest request = new CreateProjectRequest("New Project", "Description");
+        CreateProjectRequest request = new CreateProjectRequest(PROJECT_NAME, PROJECT_DESCRIPTION);
         when(userRepository.findById(ownerId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> projectService.createProject(ownerId, request))
@@ -76,13 +102,9 @@ class ProjectServiceTest {
 
     @Test
     void getProject_memberRequesting_returnsProject() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        Project project = Project.builder().id(projectId).name("Existing").build();
-
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
         when(projectMapper.toResponse(project))
-                .thenReturn(new ProjectResponse(projectId, "Existing", null, null, null));
+                .thenReturn(createProjectResponse(projectId, EXISTING_PROJECT_NAME, null, null));
 
         ProjectResponse response = projectService.getProject(projectId, requesterId);
 
@@ -92,12 +114,8 @@ class ProjectServiceTest {
 
     @Test
     void getProject_notAMember_throwsAccessDenied() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        Project project = Project.builder().id(projectId).name("Existing").build();
-
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
-        doThrow(new AccessDeniedException("You are not a member of this project"))
+        doThrow(new AccessDeniedException(ExceptionMessages.NOT_A_MEMBER_MSG))
                 .when(projectAccessGuard).requireMembership(projectId, requesterId);
 
         assertThatThrownBy(() -> projectService.getProject(projectId, requesterId))
@@ -106,11 +124,13 @@ class ProjectServiceTest {
 
     @Test
     void getProject_notFound_throwsResourceNotFound() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
         when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> projectService.getProject(projectId, requesterId))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    private ProjectResponse createProjectResponse(UUID id, String name, String description, UUID ownerId) {
+        return new ProjectResponse(id, name, description, ownerId, null);
     }
 }

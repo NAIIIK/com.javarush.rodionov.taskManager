@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import java.util.UUID;
+
+import com.javarush.taskmanager.util.ExceptionMessages;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -42,7 +44,7 @@ class ProjectAccessGuardTest {
 
         assertThatThrownBy(() -> guard.requireMembership(projectId, userId))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("You are not a member of this project");
+                .hasMessage(ExceptionMessages.NOT_A_MEMBER_MSG);
     }
 
     @Test
@@ -83,7 +85,7 @@ class ProjectAccessGuardTest {
 
         assertThatThrownBy(() -> guard.requireRoleAtLeast(projectId, userId, ProjectRole.MANAGER))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("You are not a member of this project");
+                .hasMessage(ExceptionMessages.NOT_A_MEMBER_MSG);
     }
 
     private ProjectMember mockMemberWithRole(ProjectRole role) {

@@ -11,6 +11,8 @@ import com.javarush.taskmanager.user.User;
 import com.javarush.taskmanager.user.UserRepository;
 import java.util.List;
 import java.util.UUID;
+
+import com.javarush.taskmanager.util.ExceptionMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +30,7 @@ public class ProjectService {
 
     public ProjectResponse createProject(UUID ownerId, CreateProjectRequest request) {
         User owner = userRepository.findById(ownerId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + ownerId));
+                .orElseThrow(() -> new ResourceNotFoundException(ExceptionMessages.USER_NOT_FOUND_MSG + ownerId));
 
         Project project = Project.builder()
                 .name(request.name())
@@ -57,7 +59,7 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public ProjectResponse getProject(UUID projectId, UUID requesterId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + projectId));
+                .orElseThrow(() -> new ResourceNotFoundException(ExceptionMessages.PROJECT_NOT_FOUND_MSG + projectId));
 
         projectAccessGuard.requireMembership(projectId, requesterId);
 

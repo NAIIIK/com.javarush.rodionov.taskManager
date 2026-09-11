@@ -1,5 +1,6 @@
 package com.javarush.taskmanager.exception;
 
+import com.javarush.taskmanager.util.ExceptionMessages;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
@@ -30,7 +31,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ApiError> handleUsernameNotFound(UsernameNotFoundException ignored, HttpServletRequest request) {
-        return build(HttpStatus.UNAUTHORIZED, "Invalid credentials", request);
+        return build(HttpStatus.UNAUTHORIZED, ExceptionMessages.INVALID_CREDENTIALS_MSG, request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

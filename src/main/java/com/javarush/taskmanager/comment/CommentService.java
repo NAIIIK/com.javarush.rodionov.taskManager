@@ -10,6 +10,8 @@ import com.javarush.taskmanager.task.Task;
 import com.javarush.taskmanager.task.TaskRepository;
 import java.util.List;
 import java.util.UUID;
+
+import com.javarush.taskmanager.util.ExceptionMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -32,7 +34,7 @@ public class CommentService {
         projectAccessGuard.requireMembership(projectId, requesterId);
 
         ProjectMember author = projectMemberRepository.findByProjectIdAndUserId(projectId, requesterId)
-                .orElseThrow(() -> new AccessDeniedException("You are not a member of this project"));
+                .orElseThrow(() -> new AccessDeniedException(ExceptionMessages.NOT_A_MEMBER_MSG));
 
         Comment comment = Comment.builder()
                 .task(task)
@@ -56,6 +58,6 @@ public class CommentService {
 
     private Task getTaskOrThrow(UUID taskId) {
         return taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+                .orElseThrow(() -> new ResourceNotFoundException(ExceptionMessages.TASK_NOT_FOUND_MSG + taskId));
     }
 }

@@ -12,6 +12,8 @@ import com.javarush.taskmanager.task.dto.TaskResponse;
 import com.javarush.taskmanager.task.dto.UpdateTaskStatusRequest;
 import java.util.List;
 import java.util.UUID;
+
+import com.javarush.taskmanager.util.ExceptionMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -22,8 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class TaskService {
 
-    private static final String NOT_A_MEMBER_MSG = "You are not a member of this project";
-
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
@@ -32,7 +32,7 @@ public class TaskService {
 
     public TaskResponse createTask(UUID projectId, UUID requesterId, CreateTaskRequest request) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + projectId));
+                .orElseThrow(() -> new ResourceNotFoundException(ExceptionMessages.PROJECT_NOT_FOUND_MSG + projectId));
 
         projectAccessGuard.requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
 
@@ -70,7 +70,7 @@ public class TaskService {
         projectAccessGuard.requireMembership(projectId, requesterId);
 
         ProjectMember member = projectMemberRepository.findByProjectIdAndUserId(projectId, requesterId)
-                .orElseThrow(() -> new AccessDeniedException(NOT_A_MEMBER_MSG));
+                .orElseThrow(() -> new AccessDeniedException(ExceptionMessages.NOT_A_MEMBER_MSG));
 
         task.setAssignee(member);
         return taskMapper.toResponse(task);
@@ -81,7 +81,7 @@ public class TaskService {
         UUID projectId = task.getProject().getId();
 
         ProjectMember requester = projectMemberRepository.findByProjectIdAndUserId(projectId, requesterId)
-                .orElseThrow(() -> new AccessDeniedException(NOT_A_MEMBER_MSG));
+                .orElseThrow(() -> new AccessDeniedException(ExceptionMessages.NOT_A_MEMBER_MSG));
 
         boolean isAssignee = task.getAssignee() != null && task.getAssignee().getId().equals(requester.getId());
         boolean isManagerOrOwner = requester.getRole().getWeight() <= ProjectRole.MANAGER.getWeight();
@@ -96,6 +96,6 @@ public class TaskService {
 
     private Task getTaskOrThrow(UUID taskId) {
         return taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+                .orElseThrow(() -> new ResourceNotFoundException(ExceptionMessages.TASK_NOT_FOUND_MSG + taskId));
     }
 }
