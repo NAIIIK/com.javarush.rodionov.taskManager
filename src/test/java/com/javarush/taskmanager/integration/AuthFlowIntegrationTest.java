@@ -5,6 +5,7 @@ import com.javarush.taskmanager.auth.dto.RegisterRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.json.JsonMapper;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -13,26 +14,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class AuthFlowIntegrationTest extends AbstractIntegrationTest {
 
+    private static final String WRONG_PASSWORD = "wrong-password";
+    private static final String USER_PREFIX = "user";
+
     @Autowired
     private JsonMapper jsonMapper;
 
     @Test
     void registerThenLogin_returnsTokens() throws Exception {
-        RegisterRequest registerRequest = new RegisterRequest(
-                "alice@example.com", "password123", "Alice", "Smith");
+        String email = uniqueEmail(USER_PREFIX);
 
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(registerRequest)))
+        register(email)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.refreshToken").isNotEmpty());
 
-        LoginRequest loginRequest = new LoginRequest("alice@example.com", "password123");
-
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(loginRequest)))
+        login(email, DEFAULT_PASSWORD)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.refreshToken").isNotEmpty());
@@ -40,35 +37,39 @@ class AuthFlowIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void register_duplicateEmail_returnsConflict() throws Exception {
-        RegisterRequest registerRequest = new RegisterRequest(
-                "bob@example.com", "password123", "Bob", "Jones");
+        String email = uniqueEmail(USER_PREFIX);
 
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(registerRequest)))
+        register(email)
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(registerRequest)))
+        register(email)
                 .andExpect(status().isConflict());
     }
 
     @Test
     void login_wrongPassword_returnsUnauthorized() throws Exception {
-        RegisterRequest registerRequest = new RegisterRequest(
-                "carl@example.com", "password123", "Carl", "Brown");
+        String email = uniqueEmail(USER_PREFIX);
 
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(registerRequest)))
+        register(email)
                 .andExpect(status().isOk());
 
-        LoginRequest wrongLogin = new LoginRequest("carl@example.com", "wrong-password");
-
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(wrongLogin)))
+        login(email, WRONG_PASSWORD)
                 .andExpect(status().isUnauthorized());
+    }
+
+    private ResultActions register(String email) throws Exception {
+        RegisterRequest request = new RegisterRequest(email, DEFAULT_PASSWORD, "Test", "User");
+
+        return mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonMapper.writeValueAsString(request)));
+    }
+
+    private ResultActions login(String email, String password) throws Exception {
+        LoginRequest request = new LoginRequest(email, password);
+
+        return mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonMapper.writeValueAsString(request)));
     }
 }

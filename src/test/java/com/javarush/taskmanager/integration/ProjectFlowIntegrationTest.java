@@ -3,24 +3,23 @@ package com.javarush.taskmanager.integration;
 import com.javarush.taskmanager.project.dto.CreateProjectRequest;
 import com.javarush.taskmanager.project.dto.UpdateProjectRequest;
 import com.javarush.taskmanager.project.member.ProjectRole;
-import com.javarush.taskmanager.project.member.dto.AddMemberRequest;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.MediaType;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class ProjectFlowIntegrationTest extends AbstractAuthenticatedIntegrationTest {
+class ProjectFlowIntegrationTest extends AbstractProjectIntegrationTest {
 
     @Test
     void createProject_authenticatedUser_returnsCreatedProject() throws Exception {
-        String token = registerAndLogin("owner1@example.com");
+        String token = registerAndLogin(uniqueEmail(OWNER_PREFIX));
         CreateProjectRequest request = new CreateProjectRequest("My Project", "Description");
 
-        mockMvc.perform(post("/api/projects")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+        mockMvc.perform(post(PROJECTS_PATH)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -31,7 +30,7 @@ class ProjectFlowIntegrationTest extends AbstractAuthenticatedIntegrationTest {
     void createProject_noToken_returnsUnauthorized() throws Exception {
         CreateProjectRequest request = new CreateProjectRequest("My Project", "Description");
 
-        mockMvc.perform(post("/api/projects")
+        mockMvc.perform(post(PROJECTS_PATH)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
@@ -39,56 +38,34 @@ class ProjectFlowIntegrationTest extends AbstractAuthenticatedIntegrationTest {
 
     @Test
     void getMyProjects_afterCreating_returnsOwnedProject() throws Exception {
-        String token = registerAndLogin("owner2@example.com");
-        CreateProjectRequest request = new CreateProjectRequest("Second Project", null);
+        String token = registerAndLogin(uniqueEmail(OWNER_PREFIX));
+        createProject(token, "Second Project", null);
 
-        mockMvc.perform(post("/api/projects")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated());
-
-        mockMvc.perform(get("/api/projects")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get(PROJECTS_PATH)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Second Project"));
     }
 
     @Test
     void getProject_notAMember_returnsForbidden() throws Exception {
-        String ownerToken = registerAndLogin("owner3@example.com");
-        String outsiderToken = registerAndLogin("outsider@example.com");
-        CreateProjectRequest request = new CreateProjectRequest("Private Project", null);
+        String ownerToken = registerAndLogin(uniqueEmail(OWNER_PREFIX));
+        String outsiderToken = registerAndLogin(uniqueEmail(OUTSIDER_PREFIX));
+        String projectId = createProject(ownerToken, "Private Project", null);
 
-        String responseBody = mockMvc.perform(post("/api/projects")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-
-        String projectId = jsonMapper.readTree(responseBody).get("id").asString();
-
-        mockMvc.perform(get("/api/projects/" + projectId)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + outsiderToken))
+        mockMvc.perform(get(projectPath(projectId))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(outsiderToken)))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void updateProject_asOwner_returnsUpdatedProject() throws Exception {
-        String token = registerAndLogin("owner19@example.com");
-        CreateProjectRequest createRequest = new CreateProjectRequest("Old Name", null);
-        String responseBody = mockMvc.perform(post("/api/projects")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(createRequest)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-        String projectId = jsonMapper.readTree(responseBody).get("id").asString();
+        String token = registerAndLogin(uniqueEmail(OWNER_PREFIX));
+        String projectId = createProject(token, "Old Name", null);
 
         UpdateProjectRequest updateRequest = new UpdateProjectRequest("New Name", "New description");
-        mockMvc.perform(patch("/api/projects/" + projectId)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+        mockMvc.perform(patch(projectPath(projectId))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
@@ -97,27 +74,15 @@ class ProjectFlowIntegrationTest extends AbstractAuthenticatedIntegrationTest {
 
     @Test
     void updateProject_asManager_returnsForbidden() throws Exception {
-        String ownerToken = registerAndLogin("owner20@example.com");
-        String managerToken = registerAndLogin("manager20@example.com");
-        CreateProjectRequest createRequest = new CreateProjectRequest("Team Project", null);
-        String responseBody = mockMvc.perform(post("/api/projects")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(createRequest)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-        String projectId = jsonMapper.readTree(responseBody).get("id").asString();
-
-        AddMemberRequest addMemberRequest = new AddMemberRequest("manager20@example.com", ProjectRole.MANAGER);
-        mockMvc.perform(post("/api/projects/" + projectId + "/members")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(addMemberRequest)))
-                .andExpect(status().isCreated());
+        String ownerToken = registerAndLogin(uniqueEmail(OWNER_PREFIX));
+        String managerEmail = uniqueEmail(MANAGER_PREFIX);
+        String managerToken = registerAndLogin(managerEmail);
+        String projectId = createProject(ownerToken, "Team Project", null);
+        addMember(ownerToken, projectId, managerEmail, ProjectRole.MANAGER);
 
         UpdateProjectRequest updateRequest = new UpdateProjectRequest("Hacked Name", null);
-        mockMvc.perform(patch("/api/projects/" + projectId)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken)
+        mockMvc.perform(patch(projectPath(projectId))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(managerToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isForbidden());
@@ -125,43 +90,24 @@ class ProjectFlowIntegrationTest extends AbstractAuthenticatedIntegrationTest {
 
     @Test
     void deleteProject_asOwner_returnsNoContent() throws Exception {
-        String token = registerAndLogin("owner21@example.com");
-        CreateProjectRequest createRequest = new CreateProjectRequest("To be deleted", null);
-        String responseBody = mockMvc.perform(post("/api/projects")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(createRequest)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-        String projectId = jsonMapper.readTree(responseBody).get("id").asString();
+        String token = registerAndLogin(uniqueEmail(OWNER_PREFIX));
+        String projectId = createProject(token, "To be deleted", null);
 
-        mockMvc.perform(delete("/api/projects/" + projectId)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(delete(projectPath(projectId))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void deleteProject_asManager_returnsForbidden() throws Exception {
-        String ownerToken = registerAndLogin("owner22@example.com");
-        String managerToken = registerAndLogin("manager22@example.com");
-        CreateProjectRequest createRequest = new CreateProjectRequest("Protected Project", null);
-        String responseBody = mockMvc.perform(post("/api/projects")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(createRequest)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-        String projectId = jsonMapper.readTree(responseBody).get("id").asString();
+        String ownerToken = registerAndLogin(uniqueEmail(OWNER_PREFIX));
+        String managerEmail = uniqueEmail(MANAGER_PREFIX);
+        String managerToken = registerAndLogin(managerEmail);
+        String projectId = createProject(ownerToken, "Protected Project", null);
+        addMember(ownerToken, projectId, managerEmail, ProjectRole.MANAGER);
 
-        AddMemberRequest addMemberRequest = new AddMemberRequest("manager22@example.com", ProjectRole.MANAGER);
-        mockMvc.perform(post("/api/projects/" + projectId + "/members")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonMapper.writeValueAsString(addMemberRequest)))
-                .andExpect(status().isCreated());
-
-        mockMvc.perform(delete("/api/projects/" + projectId)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerToken))
+        mockMvc.perform(delete(projectPath(projectId))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(managerToken)))
                 .andExpect(status().isForbidden());
     }
 }
