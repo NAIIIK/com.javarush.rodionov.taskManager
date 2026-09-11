@@ -2,6 +2,7 @@ package com.javarush.taskmanager.comment;
 
 import com.javarush.taskmanager.comment.dto.CommentResponse;
 import com.javarush.taskmanager.comment.dto.CreateCommentRequest;
+import com.javarush.taskmanager.comment.dto.UpdateCommentRequest;
 import com.javarush.taskmanager.exception.ResourceNotFoundException;
 import com.javarush.taskmanager.project.Project;
 import com.javarush.taskmanager.project.member.ProjectAccessGuard;
@@ -25,13 +26,13 @@ import org.springframework.security.access.AccessDeniedException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CommentServiceTest {
 
     private static final String COMMENT_MSG = "Looks good";
+    private static final String UPDATED_TEXT = "Updated text";
 
     @Mock
     private CommentRepository commentRepository;
@@ -119,5 +120,139 @@ class CommentServiceTest {
 
         assertThat(responses).hasSize(1);
         assertThat(responses.getFirst().text()).isEqualTo(COMMENT_MSG);
+    }
+
+    @Test
+    void updateComment_authorEditsOwnComment_updatesText() {
+        UUID taskId = UUID.randomUUID();
+        UUID projectId = UUID.randomUUID();
+        UUID commentId = UUID.randomUUID();
+        UUID requesterId = UUID.randomUUID();
+        Project project = Project.builder().id(projectId).build();
+        Task task = Task.builder().id(taskId).project(project).build();
+        ProjectMember author = ProjectMember.builder().id(UUID.randomUUID()).role(ProjectRole.MEMBER).build();
+        Comment comment = Comment.builder().id(commentId).task(task).author(author).text(COMMENT_MSG).build();
+        UpdateCommentRequest request = new UpdateCommentRequest(UPDATED_TEXT);
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, requesterId))
+                .thenReturn(Optional.of(author));
+        when(commentRepository.findByIdAndTaskId(commentId, taskId)).thenReturn(Optional.of(comment));
+        when(commentMapper.toResponse(comment))
+                .thenReturn(new CommentResponse(commentId, taskId, author.getId(), UPDATED_TEXT, null));
+
+        CommentResponse response = commentService.updateComment(taskId, commentId, requesterId, request);
+
+        assertThat(response.text()).isEqualTo(UPDATED_TEXT);
+        assertThat(comment.getText()).isEqualTo(UPDATED_TEXT);
+    }
+
+    @Test
+    void updateComment_managerEditsOthersComment_updatesText() {
+        UUID taskId = UUID.randomUUID();
+        UUID projectId = UUID.randomUUID();
+        UUID commentId = UUID.randomUUID();
+        UUID requesterId = UUID.randomUUID();
+        Project project = Project.builder().id(projectId).build();
+        Task task = Task.builder().id(taskId).project(project).build();
+        ProjectMember author = ProjectMember.builder().id(UUID.randomUUID()).role(ProjectRole.MEMBER).build();
+        ProjectMember manager = ProjectMember.builder().id(UUID.randomUUID()).role(ProjectRole.MANAGER).build();
+        Comment comment = Comment.builder().id(commentId).task(task).author(author).text(COMMENT_MSG).build();
+        UpdateCommentRequest request = new UpdateCommentRequest(UPDATED_TEXT);
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, requesterId))
+                .thenReturn(Optional.of(manager));
+        when(commentRepository.findByIdAndTaskId(commentId, taskId)).thenReturn(Optional.of(comment));
+        when(commentMapper.toResponse(comment))
+                .thenReturn(new CommentResponse(commentId, taskId, author.getId(), UPDATED_TEXT, null));
+
+        CommentResponse response = commentService.updateComment(taskId, commentId, requesterId, request);
+
+        assertThat(response.text()).isEqualTo(UPDATED_TEXT);
+    }
+
+    @Test
+    void updateComment_memberEditsOthersComment_throwsAccessDenied() {
+        UUID taskId = UUID.randomUUID();
+        UUID projectId = UUID.randomUUID();
+        UUID commentId = UUID.randomUUID();
+        UUID requesterId = UUID.randomUUID();
+        Project project = Project.builder().id(projectId).build();
+        Task task = Task.builder().id(taskId).project(project).build();
+        ProjectMember author = ProjectMember.builder().id(UUID.randomUUID()).role(ProjectRole.MEMBER).build();
+        ProjectMember requester = ProjectMember.builder().id(UUID.randomUUID()).role(ProjectRole.MEMBER).build();
+        Comment comment = Comment.builder().id(commentId).task(task).author(author).text(COMMENT_MSG).build();
+        UpdateCommentRequest request = new UpdateCommentRequest(UPDATED_TEXT);
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, requesterId))
+                .thenReturn(Optional.of(requester));
+        when(commentRepository.findByIdAndTaskId(commentId, taskId)).thenReturn(Optional.of(comment));
+
+        assertThatThrownBy(() -> commentService.updateComment(taskId, commentId, requesterId, request))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void updateComment_commentNotFound_throwsResourceNotFound() {
+        UUID taskId = UUID.randomUUID();
+        UUID projectId = UUID.randomUUID();
+        UUID commentId = UUID.randomUUID();
+        UUID requesterId = UUID.randomUUID();
+        Project project = Project.builder().id(projectId).build();
+        Task task = Task.builder().id(taskId).project(project).build();
+        ProjectMember requester = ProjectMember.builder().id(UUID.randomUUID()).role(ProjectRole.MEMBER).build();
+        UpdateCommentRequest request = new UpdateCommentRequest(UPDATED_TEXT);
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, requesterId))
+                .thenReturn(Optional.of(requester));
+        when(commentRepository.findByIdAndTaskId(commentId, taskId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> commentService.updateComment(taskId, commentId, requesterId, request))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void deleteComment_authorDeletesOwnComment_deletesIt() {
+        UUID taskId = UUID.randomUUID();
+        UUID projectId = UUID.randomUUID();
+        UUID commentId = UUID.randomUUID();
+        UUID requesterId = UUID.randomUUID();
+        Project project = Project.builder().id(projectId).build();
+        Task task = Task.builder().id(taskId).project(project).build();
+        ProjectMember author = ProjectMember.builder().id(UUID.randomUUID()).role(ProjectRole.MEMBER).build();
+        Comment comment = Comment.builder().id(commentId).task(task).author(author).text(COMMENT_MSG).build();
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, requesterId))
+                .thenReturn(Optional.of(author));
+        when(commentRepository.findByIdAndTaskId(commentId, taskId)).thenReturn(Optional.of(comment));
+
+        commentService.deleteComment(taskId, commentId, requesterId);
+
+        verify(commentRepository).delete(comment);
+    }
+
+    @Test
+    void deleteComment_memberDeletesOthersComment_throwsAccessDenied() {
+        UUID taskId = UUID.randomUUID();
+        UUID projectId = UUID.randomUUID();
+        UUID commentId = UUID.randomUUID();
+        UUID requesterId = UUID.randomUUID();
+        Project project = Project.builder().id(projectId).build();
+        Task task = Task.builder().id(taskId).project(project).build();
+        ProjectMember author = ProjectMember.builder().id(UUID.randomUUID()).role(ProjectRole.MEMBER).build();
+        ProjectMember requester = ProjectMember.builder().id(UUID.randomUUID()).role(ProjectRole.MEMBER).build();
+        Comment comment = Comment.builder().id(commentId).task(task).author(author).text(COMMENT_MSG).build();
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(projectMemberRepository.findByProjectIdAndUserId(projectId, requesterId))
+                .thenReturn(Optional.of(requester));
+        when(commentRepository.findByIdAndTaskId(commentId, taskId)).thenReturn(Optional.of(comment));
+
+        assertThatThrownBy(() -> commentService.deleteComment(taskId, commentId, requesterId))
+                .isInstanceOf(AccessDeniedException.class);
     }
 }

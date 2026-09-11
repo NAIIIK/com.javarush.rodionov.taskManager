@@ -34,7 +34,13 @@
     <logger name="com.javarush.taskmanager" level="DEBUG"/>
     <logger name="org.hibernate.SQL" level="WARN"/>
 
-    <springProfile name="!docker">
+    <springProfile name="test">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="!docker &amp; !test">
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>

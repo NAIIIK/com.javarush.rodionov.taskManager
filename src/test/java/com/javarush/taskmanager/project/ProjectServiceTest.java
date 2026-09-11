@@ -3,6 +3,7 @@ package com.javarush.taskmanager.project;
 import com.javarush.taskmanager.exception.ResourceNotFoundException;
 import com.javarush.taskmanager.project.dto.CreateProjectRequest;
 import com.javarush.taskmanager.project.dto.ProjectResponse;
+import com.javarush.taskmanager.project.dto.UpdateProjectRequest;
 import com.javarush.taskmanager.project.member.ProjectAccessGuard;
 import com.javarush.taskmanager.project.member.ProjectMemberRepository;
 import com.javarush.taskmanager.project.member.ProjectRole;
@@ -34,7 +35,9 @@ class ProjectServiceTest {
 
     private static final String OWNER_EMAIL = "owner@example.com";
     private static final String PROJECT_NAME = "New Project";
+    private static final String NEW_PROJECT_NAME = "New name";
     private static final String PROJECT_DESCRIPTION = "Description";
+    private static final String NEW_PROJECT_DESCRIPTION = "New description";
     private static final String EXISTING_PROJECT_NAME = "Existing";
 
     private final UUID projectId = UUID.randomUUID();
@@ -128,6 +131,61 @@ class ProjectServiceTest {
 
         assertThatThrownBy(() -> projectService.getProject(projectId, requesterId))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void updateProject_requesterIsOwner_updatesFields() {
+        UpdateProjectRequest request = new UpdateProjectRequest(NEW_PROJECT_NAME, NEW_PROJECT_DESCRIPTION);
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(projectMapper.toResponse(project))
+                .thenReturn(createProjectResponse(projectId, NEW_PROJECT_NAME, NEW_PROJECT_DESCRIPTION, null));
+
+        ProjectResponse response = projectService.updateProject(projectId, requesterId, request);
+
+        assertThat(response.name()).isEqualTo(NEW_PROJECT_NAME);
+        assertThat(project.getName()).isEqualTo(NEW_PROJECT_NAME);
+        verify(projectAccessGuard).requireRoleAtLeast(projectId, requesterId, ProjectRole.OWNER);
+    }
+
+    @Test
+    void updateProject_requesterNotOwner_throwsAccessDenied() {
+        UpdateProjectRequest request = new UpdateProjectRequest(NEW_PROJECT_NAME, null);
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        doThrow(new AccessDeniedException(ExceptionMessages.REQUIRES_OWNER_ROLE_OR_HIGHER_MSG))
+                .when(projectAccessGuard).requireRoleAtLeast(projectId, requesterId, ProjectRole.OWNER);
+
+        assertThatThrownBy(() -> projectService.updateProject(projectId, requesterId, request))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void updateProject_notFound_throwsResourceNotFound() {
+        UpdateProjectRequest request = new UpdateProjectRequest(NEW_PROJECT_NAME, null);
+        when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> projectService.updateProject(projectId, requesterId, request))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void deleteProject_requesterIsOwner_deletesProject() {
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+
+        projectService.deleteProject(projectId, requesterId);
+
+        verify(projectRepository).delete(project);
+    }
+
+    @Test
+    void deleteProject_requesterNotOwner_throwsAccessDenied() {
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        doThrow(new AccessDeniedException(ExceptionMessages.REQUIRES_OWNER_ROLE_OR_HIGHER_MSG))
+                .when(projectAccessGuard).requireRoleAtLeast(projectId, requesterId, ProjectRole.OWNER);
+
+        assertThatThrownBy(() -> projectService.deleteProject(projectId, requesterId))
+                .isInstanceOf(AccessDeniedException.class);
     }
 
     private ProjectResponse createProjectResponse(UUID id, String name, String description, UUID ownerId) {

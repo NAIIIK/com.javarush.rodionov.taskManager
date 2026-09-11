@@ -3,6 +3,7 @@ package com.javarush.taskmanager.project;
 import com.javarush.taskmanager.exception.ApiError;
 import com.javarush.taskmanager.project.dto.CreateProjectRequest;
 import com.javarush.taskmanager.project.dto.ProjectResponse;
+import com.javarush.taskmanager.project.dto.UpdateProjectRequest;
 import com.javarush.taskmanager.security.CurrentUserId;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -82,5 +83,46 @@ public class ProjectController {
             @PathVariable UUID projectId,
             @Parameter(hidden = true) @CurrentUserId UUID userId) {
         return ResponseEntity.ok(projectService.getProject(projectId, userId));
+    }
+
+    @Operation(
+            summary = "Update a project",
+            description = "Partially updates a project's name and/or description. Requires the OWNER role."
+    )
+    @ApiResponse(responseCode = "200", description = "Project updated",
+            content = @Content(schema = @Schema(implementation = ProjectResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Validation error",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "401", description = "Access token is missing or invalid",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "403", description = "The user is not the OWNER of this project",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "404", description = "A project with this id does not exist",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @PatchMapping("/{projectId}")
+    public ResponseEntity<ProjectResponse> updateProject(
+            @PathVariable UUID projectId,
+            @Parameter(hidden = true) @CurrentUserId UUID userId,
+            @Valid @RequestBody UpdateProjectRequest request) {
+        return ResponseEntity.ok(projectService.updateProject(projectId, userId, request));
+    }
+
+    @Operation(
+            summary = "Delete a project",
+            description = "Deletes a project along with its members, tasks and comments. Requires the OWNER role."
+    )
+    @ApiResponse(responseCode = "204", description = "Project deleted")
+    @ApiResponse(responseCode = "401", description = "Access token is missing or invalid",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "403", description = "The user is not the OWNER of this project",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "404", description = "A project with this id does not exist",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @DeleteMapping("/{projectId}")
+    public ResponseEntity<Void> deleteProject(
+            @PathVariable UUID projectId,
+            @Parameter(hidden = true) @CurrentUserId UUID userId) {
+        projectService.deleteProject(projectId, userId);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -75,7 +75,7 @@ class ProjectAccessGuardTest {
 
         assertThatThrownBy(() -> guard.requireRoleAtLeast(projectId, userId, ProjectRole.MANAGER))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("Requires role MANAGER or higher");
+                .hasMessage(ExceptionMessages.REQUIRES_MANAGER_ROLE_OR_HIGHER_MSG);
     }
 
     @Test

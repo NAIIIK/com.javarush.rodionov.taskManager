@@ -19,6 +19,7 @@ databaseChangeLog:
                     nullable: false
                     foreignKeyName: fk_tasks_project
                     references: projects(id)
+                    deleteCascade: true
               - column:
                   name: title
                   type: varchar(255)
@@ -40,10 +41,6 @@ databaseChangeLog:
               - column:
                   name: assignee_id
                   type: uuid
-                  constraints:
-                    nullable: true
-                    foreignKeyName: fk_tasks_assignee
-                    references: project_members(id)
               - column:
                   name: due_date
                   type: date
@@ -57,3 +54,10 @@ databaseChangeLog:
                   type: timestamp
                   constraints:
                     nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: tasks
+            baseColumnNames: assignee_id
+            constraintName: fk_tasks_assignee
+            referencedTableName: project_members
+            referencedColumnNames: id
+            onDelete: SET NULL

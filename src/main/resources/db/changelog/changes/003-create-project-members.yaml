@@ -19,6 +19,7 @@ databaseChangeLog:
                     nullable: false
                     foreignKeyName: fk_project_members_project
                     references: projects(id)
+                    deleteCascade: true
               - column:
                   name: user_id
                   type: uuid

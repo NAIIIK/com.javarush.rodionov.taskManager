@@ -9,6 +9,7 @@ import com.javarush.taskmanager.project.member.ProjectMemberRepository;
 import com.javarush.taskmanager.project.member.ProjectRole;
 import com.javarush.taskmanager.task.dto.CreateTaskRequest;
 import com.javarush.taskmanager.task.dto.TaskResponse;
+import com.javarush.taskmanager.task.dto.UpdateTaskRequest;
 import com.javarush.taskmanager.task.dto.UpdateTaskStatusRequest;
 import java.util.List;
 import java.util.UUID;
@@ -40,7 +41,7 @@ public class TaskService {
         if (request.assigneeId() != null) {
             assignee = projectMemberRepository.findById(request.assigneeId())
                     .filter(member -> member.getProject().getId().equals(projectId))
-                    .orElseThrow(() -> new IllegalArgumentException("Assignee is not a member of this project"));
+                    .orElseThrow(() -> new IllegalArgumentException(ExceptionMessages.ASSIGNEE_IS_NOT_A_MEMBER_MSG));
         }
 
         Task task = Task.builder()
@@ -92,6 +93,41 @@ public class TaskService {
 
         task.setStatus(request.status());
         return taskMapper.toResponse(task);
+    }
+
+    public TaskResponse updateTask(UUID taskId, UUID requesterId, UpdateTaskRequest request) {
+        Task task = getTaskOrThrow(taskId);
+        UUID projectId = task.getProject().getId();
+        projectAccessGuard.requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
+
+        if (request.title() != null) {
+            task.setTitle(request.title());
+        }
+        if (request.description() != null) {
+            task.setDescription(request.description());
+        }
+        if (request.priority() != null) {
+            task.setPriority(request.priority());
+        }
+        if (request.assigneeId() != null) {
+            ProjectMember assignee = projectMemberRepository.findById(request.assigneeId())
+                    .filter(member -> member.getProject().getId().equals(projectId))
+                    .orElseThrow(() -> new IllegalArgumentException(ExceptionMessages.ASSIGNEE_IS_NOT_A_MEMBER_MSG));
+            task.setAssignee(assignee);
+        }
+        if (request.dueDate() != null) {
+            task.setDueDate(request.dueDate());
+        }
+
+        return taskMapper.toResponse(task);
+    }
+
+    public void deleteTask(UUID taskId, UUID requesterId) {
+        Task task = getTaskOrThrow(taskId);
+        UUID projectId = task.getProject().getId();
+        projectAccessGuard.requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
+
+        taskRepository.delete(task);
     }
 
     private Task getTaskOrThrow(UUID taskId) {

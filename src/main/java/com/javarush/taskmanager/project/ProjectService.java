@@ -3,6 +3,7 @@ package com.javarush.taskmanager.project;
 import com.javarush.taskmanager.exception.ResourceNotFoundException;
 import com.javarush.taskmanager.project.dto.CreateProjectRequest;
 import com.javarush.taskmanager.project.dto.ProjectResponse;
+import com.javarush.taskmanager.project.dto.UpdateProjectRequest;
 import com.javarush.taskmanager.project.member.ProjectAccessGuard;
 import com.javarush.taskmanager.project.member.ProjectMember;
 import com.javarush.taskmanager.project.member.ProjectMemberRepository;
@@ -64,5 +65,30 @@ public class ProjectService {
         projectAccessGuard.requireMembership(projectId, requesterId);
 
         return projectMapper.toResponse(project);
+    }
+
+    public ProjectResponse updateProject(UUID projectId, UUID requesterId, UpdateProjectRequest request) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException(ExceptionMessages.PROJECT_NOT_FOUND_MSG + projectId));
+
+        projectAccessGuard.requireRoleAtLeast(projectId, requesterId, ProjectRole.OWNER);
+
+        if (request.name() != null) {
+            project.setName(request.name());
+        }
+        if (request.description() != null) {
+            project.setDescription(request.description());
+        }
+
+        return projectMapper.toResponse(project);
+    }
+
+    public void deleteProject(UUID projectId, UUID requesterId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException(ExceptionMessages.PROJECT_NOT_FOUND_MSG + projectId));
+
+        projectAccessGuard.requireRoleAtLeast(projectId, requesterId, ProjectRole.OWNER);
+
+        projectRepository.delete(project);
     }
 }

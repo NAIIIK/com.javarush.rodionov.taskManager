@@ -19,6 +19,7 @@ databaseChangeLog:
                     nullable: false
                     foreignKeyName: fk_comments_task
                     references: tasks(id)
+                    deleteCascade: true
               - column:
                   name: author_id
                   type: uuid
@@ -26,6 +27,7 @@ databaseChangeLog:
                     nullable: false
                     foreignKeyName: fk_comments_author
                     references: project_members(id)
+                    deleteCascade: true
               - column:
                   name: text
                   type: varchar(2000)

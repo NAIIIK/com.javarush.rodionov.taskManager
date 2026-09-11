@@ -2,6 +2,7 @@ package com.javarush.taskmanager.comment;
 
 import com.javarush.taskmanager.comment.dto.CommentResponse;
 import com.javarush.taskmanager.comment.dto.CreateCommentRequest;
+import com.javarush.taskmanager.comment.dto.UpdateCommentRequest;
 import com.javarush.taskmanager.exception.ApiError;
 import com.javarush.taskmanager.security.CurrentUserId;
 import io.swagger.v3.oas.annotations.Operation;
@@ -78,5 +79,54 @@ public class CommentController {
             @PathVariable UUID taskId,
             @Parameter(hidden = true) @CurrentUserId UUID userId) {
         return ResponseEntity.ok(commentService.getComments(taskId, userId));
+    }
+
+    @Operation(
+            summary = "Update a comment",
+            description = """
+                    Updates the text of a comment. Allowed for the comment's author,
+                    or for a project member with the OWNER/MANAGER role (moderation).
+                    """
+    )
+    @ApiResponse(responseCode = "200", description = "Comment updated",
+            content = @Content(schema = @Schema(implementation = CommentResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Comment text is blank or longer than 2000 characters",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "401", description = "Access token is missing or invalid",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "403", description = "The user is not a member of the project, or is neither the author nor OWNER/MANAGER",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "404", description = "The task or the comment does not exist",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @PatchMapping("/{commentId}")
+    public ResponseEntity<CommentResponse> updateComment(
+            @PathVariable UUID taskId,
+            @PathVariable UUID commentId,
+            @Parameter(hidden = true) @CurrentUserId UUID userId,
+            @Valid @RequestBody UpdateCommentRequest request) {
+        return ResponseEntity.ok(commentService.updateComment(taskId, commentId, userId, request));
+    }
+
+    @Operation(
+            summary = "Delete a comment",
+            description = """
+                    Deletes a comment. Allowed for the comment's author,
+                    or for a project member with the OWNER/MANAGER role (moderation).
+                    """
+    )
+    @ApiResponse(responseCode = "204", description = "Comment deleted")
+    @ApiResponse(responseCode = "401", description = "Access token is missing or invalid",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "403", description = "The user is not a member of the project, or is neither the author nor OWNER/MANAGER",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "404", description = "The task or the comment does not exist",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<Void> deleteComment(
+            @PathVariable UUID taskId,
+            @PathVariable UUID commentId,
+            @Parameter(hidden = true) @CurrentUserId UUID userId) {
+        commentService.deleteComment(taskId, commentId, userId);
+        return ResponseEntity.noContent().build();
     }
 }
