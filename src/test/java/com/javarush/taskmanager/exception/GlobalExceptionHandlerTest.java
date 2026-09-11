@@ -5,189 +5,198 @@ import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.javarush.taskmanager.util.ExceptionMessages;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 class GlobalExceptionHandlerTest {
 
+    private static final String API_PROJECTS = "/api/projects";
+    private static final String API_PROJECTS_1 = "/api/projects/1";
+    private static final String API_LOGIN = "/api/auth/login";
+
+    private static final String BAD_INPUT_MSG = "bad input";
+    private static final String CONFLICT_MSG = "conflict";
+    private static final String NO_ACCESS_MSG = "no access";
+
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    private HttpServletRequest request;
+
+    @BeforeEach
+    void setUp() {
+        request = mock(HttpServletRequest.class);
+    }
 
     @Test
     void handleIllegalArgument_returnsBadRequest() {
-        HttpServletRequest request = mockRequest("/api/projects");
+        when(request.getRequestURI()).thenReturn(API_PROJECTS);
 
         ResponseEntity<ApiError> response =
-                handler.handleIllegalArgument(new IllegalArgumentException("bad input"), request);
+                handler.handleIllegalArgument(new IllegalArgumentException(BAD_INPUT_MSG), request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 
         ApiError body = response.getBody();
-        assertThat(body).isNotNull();
-        assertThat(body.status()).isEqualTo(400);
-        assertThat(body.error()).isEqualTo("Bad Request");
-        assertThat(body.message()).isEqualTo("bad input");
-        assertThat(body.path()).isEqualTo("/api/projects");
-        assertThat(body.timestamp()).isCloseTo(Instant.now(), within(2, ChronoUnit.SECONDS));
+        assertThat(body)
+                .isNotNull()
+                .satisfies(b -> {
+                    assertThat(b.status()).isEqualTo(400);
+                    assertThat(b.error()).isEqualTo("Bad Request");
+                    assertThat(b.message()).isEqualTo(BAD_INPUT_MSG);
+                    assertThat(b.path()).isEqualTo(API_PROJECTS);
+                    assertThat(b.timestamp()).isCloseTo(Instant.now(), within(2, ChronoUnit.SECONDS));
+                });
     }
 
     @Test
     void handleIllegalState_returnsConflict() {
-        HttpServletRequest request = mockRequest("/api/projects/1");
+        when(request.getRequestURI()).thenReturn(API_PROJECTS_1);
 
         ResponseEntity<ApiError> response =
-                handler.handleIllegalState(new IllegalStateException("conflict"), request);
+                handler.handleIllegalState(new IllegalStateException(CONFLICT_MSG), request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-
-        ApiError body = response.getBody();
-        assertThat(body).isNotNull();
-        assertThat(body.error()).isEqualTo("Conflict");
-        assertThat(body.message()).isEqualTo("conflict");
+        assertThat(response.getBody())
+                .isNotNull()
+                .extracting(
+                        apiError -> apiError != null ? apiError.error() : null,
+                        apiError1 -> apiError1 != null ? apiError1.message() : null
+                )
+                .containsExactly("Conflict", CONFLICT_MSG);
     }
 
     @Test
     void handleAccessDenied_returnsForbidden() {
-        HttpServletRequest request = mockRequest("/api/projects/1/members");
+        when(request.getRequestURI()).thenReturn(API_PROJECTS_1);
 
         ResponseEntity<ApiError> response =
-                handler.handleAccessDenied(new AccessDeniedException("no access"), request);
+                handler.handleAccessDenied(new AccessDeniedException(NO_ACCESS_MSG), request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-
-        ApiError body = response.getBody();
-        assertThat(body).isNotNull();
-        assertThat(body.message()).isEqualTo("no access");
+        assertThat(response.getBody())
+                .isNotNull()
+                .extracting(apiError -> apiError != null ? apiError.message() : null)
+                .isEqualTo(NO_ACCESS_MSG);
     }
 
     @Test
     void handleUsernameNotFound_returnsUnauthorizedWithGenericMessage() {
-        HttpServletRequest request = mockRequest("/api/auth/login");
+        when(request.getRequestURI()).thenReturn(API_LOGIN);
 
         ResponseEntity<ApiError> response =
                 handler.handleUsernameNotFound(new UsernameNotFoundException("user xyz not found"), request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-
-        ApiError body = response.getBody();
-        assertThat(body).isNotNull();
-        // сообщение не должно светить реальную причину (username not found)
-        assertThat(body.message()).isEqualTo("Invalid credentials");
+        assertThat(response.getBody())
+                .isNotNull()
+                .extracting(apiError -> apiError != null ? apiError.message() : null)
+                .isEqualTo(ExceptionMessages.INVALID_CREDENTIALS_MSG);
     }
 
     @Test
     void handleResourceNotFound_returnsNotFound() {
-        HttpServletRequest request = mockRequest("/api/projects/999");
+        String message = "project not found";
+        when(request.getRequestURI()).thenReturn(API_PROJECTS_1);
 
         ResponseEntity<ApiError> response =
-                handler.handleNotFound(new ResourceNotFoundException("project not found"), request);
+                handler.handleNotFound(new ResourceNotFoundException(message), request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-
-        ApiError body = response.getBody();
-        assertThat(body).isNotNull();
-        assertThat(body.message()).isEqualTo("project not found");
+        assertThat(response.getBody())
+                .isNotNull()
+                .extracting(apiError -> apiError != null ? apiError.message() : null)
+                .isEqualTo(message);
     }
 
     @Test
     void handleInvalidCredentials_returnsUnauthorized() {
-        HttpServletRequest request = mockRequest("/api/auth/login");
+        when(request.getRequestURI()).thenReturn(API_LOGIN);
 
         ResponseEntity<ApiError> response =
                 handler.handleInvalidCredentials(new InvalidCredentialsException(), request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-
-        ApiError body = response.getBody();
-        assertThat(body).isNotNull();
-        assertThat(body.message()).isEqualTo("Invalid credentials");
+        assertThat(response.getBody())
+                .isNotNull()
+                .extracting(apiError -> apiError != null ? apiError.message() : null)
+                .isEqualTo(ExceptionMessages.INVALID_CREDENTIALS_MSG);
     }
 
     @Test
     void usernameNotFoundAndInvalidCredentials_produceIdenticalResponseShape() {
-        HttpServletRequest request = mockRequest("/api/auth/login");
+        when(request.getRequestURI()).thenReturn(API_LOGIN);
 
         ResponseEntity<ApiError> byUsername =
                 handler.handleUsernameNotFound(new UsernameNotFoundException("no such user"), request);
         ResponseEntity<ApiError> byCredentials =
                 handler.handleInvalidCredentials(new InvalidCredentialsException(), request);
 
-        ApiError usernameBody = byUsername.getBody();
-        ApiError credentialsBody = byCredentials.getBody();
-
-        assertThat(usernameBody).isNotNull();
-        assertThat(credentialsBody).isNotNull();
         assertThat(byUsername.getStatusCode()).isEqualTo(byCredentials.getStatusCode());
-        assertThat(usernameBody.message()).isEqualTo(credentialsBody.message());
+        assertThat(byUsername.getBody())
+                .isNotNull()
+                .usingRecursiveComparison()
+                .ignoringFields("timestamp")
+                .isEqualTo(byCredentials.getBody());
     }
 
     @Test
     void handleValidation_returnsFirstFieldErrorMessage() {
-        HttpServletRequest request = mockRequest("/api/projects");
-
-        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
-        BindingResult bindingResult = mock(BindingResult.class);
-        FieldError fieldError = new FieldError("projectDto", "name", "must not be blank");
-
-        when(ex.getBindingResult()).thenReturn(bindingResult);
-        when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError));
+        when(request.getRequestURI()).thenReturn(API_PROJECTS);
+        MethodArgumentNotValidException ex = createValidationException("must not be blank");
 
         ResponseEntity<ApiError> response = handler.handleValidation(ex, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-
-        ApiError body = response.getBody();
-        assertThat(body).isNotNull();
-        assertThat(body.message()).isEqualTo("must not be blank");
+        assertThat(response.getBody())
+                .isNotNull()
+                .extracting(apiError -> apiError != null ? apiError.message() : null)
+                .isEqualTo("must not be blank");
     }
 
     @Test
     void handleValidation_fallsBackToDefaultMessage_whenFieldErrorMessageIsNull() {
-        HttpServletRequest request = mockRequest("/api/projects");
-
-        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
-        BindingResult bindingResult = mock(BindingResult.class);
-        FieldError fieldError = new FieldError("projectDto", "name", null, false, null, null, null);
-
-        when(ex.getBindingResult()).thenReturn(bindingResult);
-        when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError));
+        when(request.getRequestURI()).thenReturn(API_PROJECTS);
+        MethodArgumentNotValidException ex = createValidationException(null);
 
         ResponseEntity<ApiError> response = handler.handleValidation(ex, request);
 
-        ApiError body = response.getBody();
-        assertThat(body).isNotNull();
-        assertThat(body.message()).isEqualTo("Invalid value");
+        assertThat(response.getBody())
+                .isNotNull()
+                .extracting(apiError -> apiError != null ? apiError.message() : null)
+                .isEqualTo("Invalid value");
     }
 
     @Test
     void handleValidation_fallsBackToGenericMessage_whenNoFieldErrors() {
-        HttpServletRequest request = mockRequest("/api/projects");
+        when(request.getRequestURI()).thenReturn(API_PROJECTS);
 
-        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
-        BindingResult bindingResult = mock(BindingResult.class);
-
-        when(ex.getBindingResult()).thenReturn(bindingResult);
-        when(bindingResult.getFieldErrors()).thenReturn(List.of());
+        BindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "target");
+        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(mock(MethodParameter.class), bindingResult);
 
         ResponseEntity<ApiError> response = handler.handleValidation(ex, request);
 
-        ApiError body = response.getBody();
-        assertThat(body).isNotNull();
-        assertThat(body.message()).isEqualTo("Validation failed");
+        assertThat(response.getBody())
+                .isNotNull()
+                .extracting(apiError -> apiError != null ? apiError.message() : null)
+                .isEqualTo("Validation failed");
     }
 
-    private HttpServletRequest mockRequest(String uri) {
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getRequestURI()).thenReturn(uri);
-        return request;
+    private MethodArgumentNotValidException createValidationException(String errorMessage) {
+        BindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "projectDto");
+        bindingResult.addError(new FieldError("projectDto", "name", errorMessage));
+        return new MethodArgumentNotValidException(mock(MethodParameter.class), bindingResult);
     }
 }

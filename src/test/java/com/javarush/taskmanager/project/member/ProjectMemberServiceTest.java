@@ -12,6 +12,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.javarush.taskmanager.util.ExceptionMessages;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,6 +34,18 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ProjectMemberServiceTest {
 
+    private static final String NEW_USER_EMAIL = "new@example.com";
+    private static final String MISSING_EMAIL = "missing@example.com";
+    private static final String FIRST_NAME = "First";
+    private static final String LAST_NAME = "Last";
+
+    private static final String REQUIRES_MANAGER_ROLE_OR_HIGHER_MSG = "Requires role MANAGER or higher";
+
+    private final UUID projectId = UUID.randomUUID();
+    private final UUID requesterId = UUID.randomUUID();
+    private final UUID memberId = UUID.randomUUID();
+    private final UUID userId = UUID.randomUUID();
+
     @Mock
     private ProjectMemberRepository projectMemberRepository;
 
@@ -49,21 +64,24 @@ class ProjectMemberServiceTest {
     @InjectMocks
     private ProjectMemberService projectMemberService;
 
+    private Project project;
+    private User user;
+
+    @BeforeEach
+    void setUp() {
+        project = Project.builder().id(projectId).name("Project").build();
+        user = User.builder().id(userId).email(NEW_USER_EMAIL).build();
+    }
+
     @Test
     void addMember_validRequest_addsMemberAndReturnsResponse() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        Project project = Project.builder().id(projectId).name("Project").build();
-        User user = User.builder().id(UUID.randomUUID()).email("new@example.com").build();
-        AddMemberRequest request = new AddMemberRequest("new@example.com", ProjectRole.MEMBER);
+        AddMemberRequest request = new AddMemberRequest(NEW_USER_EMAIL, ProjectRole.MEMBER);
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
-        when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.of(user));
-        when(projectMemberRepository.existsByProjectIdAndUserId(projectId, user.getId())).thenReturn(false);
+        when(userRepository.findByEmail(NEW_USER_EMAIL)).thenReturn(Optional.of(user));
+        when(projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)).thenReturn(false);
         when(projectMemberMapper.toResponse(any(ProjectMember.class)))
-                .thenReturn(new MemberResponse(
-                        UUID.randomUUID(), user.getId(), "new@example.com",
-                        "First", "Last", ProjectRole.MEMBER, Instant.now()));
+                .thenReturn(createMemberResponse(ProjectRole.MEMBER));
 
         MemberResponse response = projectMemberService.addMember(projectId, requesterId, request);
 
@@ -75,9 +93,7 @@ class ProjectMemberServiceTest {
 
     @Test
     void addMember_projectNotFound_throwsResourceNotFound() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        AddMemberRequest request = new AddMemberRequest("new@example.com", ProjectRole.MEMBER);
+        AddMemberRequest request = new AddMemberRequest(NEW_USER_EMAIL, ProjectRole.MEMBER);
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
 
@@ -90,13 +106,10 @@ class ProjectMemberServiceTest {
 
     @Test
     void addMember_requesterLacksRole_throwsAccessDenied() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        Project project = Project.builder().id(projectId).name("Project").build();
-        AddMemberRequest request = new AddMemberRequest("new@example.com", ProjectRole.MEMBER);
+        AddMemberRequest request = new AddMemberRequest(NEW_USER_EMAIL, ProjectRole.MEMBER);
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
-        doThrow(new AccessDeniedException("Requires role MANAGER or higher"))
+        doThrow(new AccessDeniedException(REQUIRES_MANAGER_ROLE_OR_HIGHER_MSG))
                 .when(projectAccessGuard).requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
 
         assertThatThrownBy(() -> projectMemberService.addMember(projectId, requesterId, request))
@@ -108,10 +121,7 @@ class ProjectMemberServiceTest {
 
     @Test
     void addMember_requestedRoleOwner_throwsIllegalArgument() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        Project project = Project.builder().id(projectId).name("Project").build();
-        AddMemberRequest request = new AddMemberRequest("new@example.com", ProjectRole.OWNER);
+        AddMemberRequest request = new AddMemberRequest(NEW_USER_EMAIL, ProjectRole.OWNER);
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
 
@@ -124,13 +134,10 @@ class ProjectMemberServiceTest {
 
     @Test
     void addMember_userNotFound_throwsResourceNotFound() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        Project project = Project.builder().id(projectId).name("Project").build();
-        AddMemberRequest request = new AddMemberRequest("missing@example.com", ProjectRole.MEMBER);
+        AddMemberRequest request = new AddMemberRequest(MISSING_EMAIL, ProjectRole.MEMBER);
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
-        when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(MISSING_EMAIL)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> projectMemberService.addMember(projectId, requesterId, request))
                 .isInstanceOf(ResourceNotFoundException.class);
@@ -140,15 +147,11 @@ class ProjectMemberServiceTest {
 
     @Test
     void addMember_userAlreadyMember_throwsIllegalState() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        Project project = Project.builder().id(projectId).name("Project").build();
-        User user = User.builder().id(UUID.randomUUID()).email("existing@example.com").build();
-        AddMemberRequest request = new AddMemberRequest("existing@example.com", ProjectRole.MEMBER);
+        AddMemberRequest request = new AddMemberRequest(NEW_USER_EMAIL, ProjectRole.MEMBER);
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
-        when(userRepository.findByEmail("existing@example.com")).thenReturn(Optional.of(user));
-        when(projectMemberRepository.existsByProjectIdAndUserId(projectId, user.getId())).thenReturn(true);
+        when(userRepository.findByEmail(NEW_USER_EMAIL)).thenReturn(Optional.of(user));
+        when(projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)).thenReturn(true);
 
         assertThatThrownBy(() -> projectMemberService.addMember(projectId, requesterId, request))
                 .isInstanceOf(IllegalStateException.class);
@@ -158,16 +161,11 @@ class ProjectMemberServiceTest {
 
     @Test
     void getAllMembers_memberRequesting_returnsMembers() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        ProjectMember member = ProjectMember.builder().id(UUID.randomUUID()).role(ProjectRole.MEMBER).build();
+        ProjectMember member = createProjectMember(ProjectRole.MEMBER);
 
         when(projectRepository.existsById(projectId)).thenReturn(true);
         when(projectMemberRepository.findAllByProjectId(projectId)).thenReturn(List.of(member));
-        when(projectMemberMapper.toResponse(member))
-                .thenReturn(new MemberResponse(
-                        member.getId(), UUID.randomUUID(), "e@example.com",
-                        "First", "Last", ProjectRole.MEMBER, Instant.now()));
+        when(projectMemberMapper.toResponse(member)).thenReturn(createMemberResponse(ProjectRole.MEMBER));
 
         List<MemberResponse> result = projectMemberService.getAllMembers(projectId, requesterId);
 
@@ -177,9 +175,6 @@ class ProjectMemberServiceTest {
 
     @Test
     void getAllMembers_projectNotFound_throwsResourceNotFound() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-
         when(projectRepository.existsById(projectId)).thenReturn(false);
 
         assertThatThrownBy(() -> projectMemberService.getAllMembers(projectId, requesterId))
@@ -190,11 +185,8 @@ class ProjectMemberServiceTest {
 
     @Test
     void getAllMembers_notAMember_throwsAccessDenied() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-
         when(projectRepository.existsById(projectId)).thenReturn(true);
-        doThrow(new AccessDeniedException("You are not a member of this project"))
+        doThrow(new AccessDeniedException(ExceptionMessages.NOT_A_MEMBER_MSG))
                 .when(projectAccessGuard).requireMembership(projectId, requesterId);
 
         assertThatThrownBy(() -> projectMemberService.getAllMembers(projectId, requesterId))
@@ -203,21 +195,14 @@ class ProjectMemberServiceTest {
         verify(projectMemberRepository, never()).findAllByProjectId(any());
     }
 
-
     @Test
     void updateMemberRole_ownerRequesting_updatesRole() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        UUID memberId = UUID.randomUUID();
-        ProjectMember member = ProjectMember.builder().id(memberId).role(ProjectRole.MEMBER).build();
+        ProjectMember member = createProjectMember(ProjectRole.MEMBER);
         UpdateMemberRoleRequest request = new UpdateMemberRoleRequest(ProjectRole.MANAGER);
 
         when(projectRepository.existsById(projectId)).thenReturn(true);
         when(projectMemberRepository.findByIdAndProjectId(memberId, projectId)).thenReturn(Optional.of(member));
-        when(projectMemberMapper.toResponse(member))
-                .thenReturn(new MemberResponse(
-                        memberId, UUID.randomUUID(), "e@example.com",
-                        "First", "Last", ProjectRole.MANAGER, Instant.now()));
+        when(projectMemberMapper.toResponse(member)).thenReturn(createMemberResponse(ProjectRole.MANAGER));
 
         MemberResponse response = projectMemberService.updateMemberRole(projectId, requesterId, memberId, request);
 
@@ -228,9 +213,6 @@ class ProjectMemberServiceTest {
 
     @Test
     void updateMemberRole_projectNotFound_throwsResourceNotFound() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        UUID memberId = UUID.randomUUID();
         UpdateMemberRoleRequest request = new UpdateMemberRoleRequest(ProjectRole.MANAGER);
 
         when(projectRepository.existsById(projectId)).thenReturn(false);
@@ -243,9 +225,6 @@ class ProjectMemberServiceTest {
 
     @Test
     void updateMemberRole_requesterNotOwner_throwsAccessDenied() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        UUID memberId = UUID.randomUUID();
         UpdateMemberRoleRequest request = new UpdateMemberRoleRequest(ProjectRole.MANAGER);
 
         when(projectRepository.existsById(projectId)).thenReturn(true);
@@ -260,9 +239,6 @@ class ProjectMemberServiceTest {
 
     @Test
     void updateMemberRole_requestedRoleOwner_throwsIllegalArgument() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        UUID memberId = UUID.randomUUID();
         UpdateMemberRoleRequest request = new UpdateMemberRoleRequest(ProjectRole.OWNER);
 
         when(projectRepository.existsById(projectId)).thenReturn(true);
@@ -275,9 +251,6 @@ class ProjectMemberServiceTest {
 
     @Test
     void updateMemberRole_memberNotFound_throwsResourceNotFound() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        UUID memberId = UUID.randomUUID();
         UpdateMemberRoleRequest request = new UpdateMemberRoleRequest(ProjectRole.MANAGER);
 
         when(projectRepository.existsById(projectId)).thenReturn(true);
@@ -289,10 +262,7 @@ class ProjectMemberServiceTest {
 
     @Test
     void updateMemberRole_targetIsOwner_throwsIllegalArgument() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        UUID memberId = UUID.randomUUID();
-        ProjectMember owner = ProjectMember.builder().id(memberId).role(ProjectRole.OWNER).build();
+        ProjectMember owner = createProjectMember(ProjectRole.OWNER);
         UpdateMemberRoleRequest request = new UpdateMemberRoleRequest(ProjectRole.MANAGER);
 
         when(projectRepository.existsById(projectId)).thenReturn(true);
@@ -306,10 +276,7 @@ class ProjectMemberServiceTest {
 
     @Test
     void removeMember_managerRequesting_removesMember() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        UUID memberId = UUID.randomUUID();
-        ProjectMember member = ProjectMember.builder().id(memberId).role(ProjectRole.MEMBER).build();
+        ProjectMember member = createProjectMember(ProjectRole.MEMBER);
 
         when(projectRepository.existsById(projectId)).thenReturn(true);
         when(projectMemberRepository.findByIdAndProjectId(memberId, projectId)).thenReturn(Optional.of(member));
@@ -322,10 +289,6 @@ class ProjectMemberServiceTest {
 
     @Test
     void removeMember_projectNotFound_throwsResourceNotFound() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        UUID memberId = UUID.randomUUID();
-
         when(projectRepository.existsById(projectId)).thenReturn(false);
 
         assertThatThrownBy(() -> projectMemberService.removeMember(projectId, requesterId, memberId))
@@ -336,12 +299,8 @@ class ProjectMemberServiceTest {
 
     @Test
     void removeMember_requesterLacksRole_throwsAccessDenied() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        UUID memberId = UUID.randomUUID();
-
         when(projectRepository.existsById(projectId)).thenReturn(true);
-        doThrow(new AccessDeniedException("Requires role MANAGER or higher"))
+        doThrow(new AccessDeniedException(REQUIRES_MANAGER_ROLE_OR_HIGHER_MSG))
                 .when(projectAccessGuard).requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
 
         assertThatThrownBy(() -> projectMemberService.removeMember(projectId, requesterId, memberId))
@@ -352,10 +311,6 @@ class ProjectMemberServiceTest {
 
     @Test
     void removeMember_memberNotFound_throwsResourceNotFound() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        UUID memberId = UUID.randomUUID();
-
         when(projectRepository.existsById(projectId)).thenReturn(true);
         when(projectMemberRepository.findByIdAndProjectId(memberId, projectId)).thenReturn(Optional.empty());
 
@@ -367,10 +322,7 @@ class ProjectMemberServiceTest {
 
     @Test
     void removeMember_targetIsOwner_throwsIllegalArgument() {
-        UUID projectId = UUID.randomUUID();
-        UUID requesterId = UUID.randomUUID();
-        UUID memberId = UUID.randomUUID();
-        ProjectMember owner = ProjectMember.builder().id(memberId).role(ProjectRole.OWNER).build();
+        ProjectMember owner = createProjectMember(ProjectRole.OWNER);
 
         when(projectRepository.existsById(projectId)).thenReturn(true);
         when(projectMemberRepository.findByIdAndProjectId(memberId, projectId)).thenReturn(Optional.of(owner));
@@ -379,5 +331,24 @@ class ProjectMemberServiceTest {
                 .isInstanceOf(IllegalArgumentException.class);
 
         verify(projectMemberRepository, never()).delete(any());
+    }
+
+    private ProjectMember createProjectMember(ProjectRole role) {
+        return ProjectMember.builder()
+                .id(memberId)
+                .role(role)
+                .build();
+    }
+
+    private MemberResponse createMemberResponse(ProjectRole role) {
+        return new MemberResponse(
+                memberId,
+                userId,
+                NEW_USER_EMAIL,
+                FIRST_NAME,
+                LAST_NAME,
+                role,
+                Instant.now()
+        );
     }
 }
