@@ -8,16 +8,29 @@ comments - all secured with JWT authentication.
 
 - **JWT authentication** - register/login, access + refresh tokens, refresh token
   rotation and revocation, logout.
+- **Global roles** - every user is `USER` or `ADMIN`. Registration always creates a
+  `USER`; `ADMIN` is not exposed through the API and only unlocks the management
+  endpoints under `/actuator/**` (see [Environment variables](#environment-variables)
+  / [Demo data](#demo-data-seed-migration) for how to get an admin locally).
 - **Projects** - any registered user can create a project and automatically becomes
-  its owner.
+  its owner. Projects can be renamed/re-described and deleted (owner only, cascades
+  to members, tasks and comments).
 - **Role-based access per project** (not global):
-  - `OWNER` - full control, including deleting the project and managing member roles.
-  - `MANAGER` - manages tasks and members, cannot delete the project or change roles.
-  - `MEMBER` - works on assigned tasks, can self-assign to a task.
+  - `OWNER` - full control: update/delete the project, manage member roles, everything
+    a `MANAGER` can do. Exactly one per project, set at creation, not transferable
+    through the API.
+  - `MANAGER` - create/update/delete tasks, add/remove members, moderate comments.
+    Cannot delete the project or change anyone's role.
+  - `MEMBER` - works on tasks, can self-assign to any task in the project.
+- **Project membership management** - add an existing user by email with a role
+  (`MANAGER`/`MEMBER` only), list members, change a member's role, remove a member
+  (the owner can't be removed or re-roled through this endpoint).
 - **Tasks** - fixed status workflow (`TO_DO` → `IN_PROGRESS` → `IN_CODE_REVIEW` →
-  `DONE`), priority (`LOW`/`MEDIUM`/`HIGH`), due date, assignee. Status can be changed
-  by the assignee or by a role above the assignee.
-- **Comments** on tasks.
+  `DONE`), priority (`LOW`/`MEDIUM`/`HIGH`), optional due date and assignee (a
+  `ProjectMember`, not a `User`). Full CRUD plus a dedicated self-assign endpoint;
+  status can be changed by the assignee or by an `OWNER`/`MANAGER`.
+- **Comments** on tasks - create, list, edit and delete, editable/deletable by the
+  author or by an `OWNER`/`MANAGER` (moderation).
 - **Interactive API docs** - OpenAPI 3 spec and Swagger UI generated automatically
   from the code (springdoc).
 - **AOP-based logging** - every `@Service` method call is logged (arguments, return
@@ -107,12 +120,40 @@ entirely - you get plain-text console + file logs, see
 
 Defined in `.env` (copy from `.env.example`), consumed by `docker-compose.yaml`:
 
-| Variable            | Description                            | Default (dev only)       |
-|---------------------|----------------------------------------|--------------------------|
-| `JWT_SECRET`        | HMAC signing secret for access tokens  | insecure dev placeholder |
-| `POSTGRES_USER`     | Database user                          | `taskmanager`            |
-| `POSTGRES_PASSWORD` | Database password                      | `taskmanager`            |
-| `LOG_PATH`          | Directory for the log file (local run) | `logs`                   |
+| Variable            | Description                           | Value in `.env.example`  |
+|---------------------|---------------------------------------|--------------------------|
+| `JWT_SECRET`        | HMAC signing secret for access tokens | insecure dev placeholder |
+| `POSTGRES_USER`     | Database user                         | `postgres`               |
+| `POSTGRES_PASSWORD` | Database password                     | `postgres`               |
+
+If a variable is left unset, `docker-compose.yaml` falls back to `taskmanager` /
+`taskmanager` for the Postgres credentials and to the same insecure placeholder for
+`JWT_SECRET`.
+
+`LOG_PATH` (directory for the local log file, defaults to `logs`) is read by
+`logback-spring.xml` but only matters for local runs (`./mvnw spring-boot:run`) -
+it's not part of `.env.example` and isn't passed through by Docker Compose, since
+the `docker` profile logs to stdout only (see
+[Logging](#logging--log-aggregation)).
+
+### Demo data (seed migration)
+
+`db/changelog/changes/007-seed-fake-data.yaml` (run automatically by Liquibase on
+startup, in every environment) inserts a set of fake entities so there's something
+to explore right after `docker compose up` without registering by hand:
+
+- 1 admin user and 9 regular users (all `@taskmanager.local` emails)
+- 3 projects, each with one `OWNER`, one or two `MANAGER`s and several `MEMBER`s
+- ~15 tasks spread across all statuses/priorities, and a handful of comments
+
+Login credentials for the seeded accounts:
+
+| User                                                   | Password      | Global role |
+|--------------------------------------------------------|---------------|-------------|
+| `admin@taskmanager.local`                              | `admin`       | `ADMIN`     |
+| everyone else (e.g. `alice.johnson@taskmanager.local`) | `password123` | `USER`      |
+
+This is fixture data for local development/demos only.
 
 ## API overview
 
@@ -140,27 +181,45 @@ status codes - the tables below are a quick map, not the full contract.
 
 ### Projects - `/api/projects`
 
-| Method | Path           | Description                             |
-|--------|----------------|-----------------------------------------|
-| POST   | `/`            | Create a project (caller becomes OWNER) |
-| GET    | `/`            | List projects the caller is a member of |
-| GET    | `/{projectId}` | Get a single project                    |
+| Method | Path           | Description                                                          |
+|--------|----------------|----------------------------------------------------------------------|
+| POST   | `/`            | Create a project (caller becomes `OWNER`)                            |
+| GET    | `/`            | List projects the caller is a member of                              |
+| GET    | `/{projectId}` | Get a single project (members only)                                  |
+| PATCH  | `/{projectId}` | Update name/description (`OWNER` only)                               |
+| DELETE | `/{projectId}` | Delete a project, cascading to members/tasks/comments (`OWNER` only) |
+
+### Project members - `/api/projects/{projectId}/members`
+
+| Method | Path          | Description                                                                 |
+|--------|---------------|-----------------------------------------------------------------------------|
+| POST   | `/`           | Add an existing user by email with a role (`MANAGER`+; can't grant `OWNER`) |
+| GET    | `/`           | List project members (members only)                                         |
+| PATCH  | `/{memberId}` | Change a member's role (`OWNER` only; owner's role can't be changed)        |
+| DELETE | `/{memberId}` | Remove a member (`MANAGER`+; the owner can't be removed)                    |
 
 ### Tasks - `/api/projects/{projectId}/tasks`, `/api/tasks/{taskId}`
 
-| Method | Path                              | Description              |
-|--------|-----------------------------------|--------------------------|
-| POST   | `/api/projects/{projectId}/tasks` | Create a task (MANAGER+) |
-| GET    | `/api/projects/{projectId}/tasks` | List tasks in a project  |
-| PATCH  | `/api/tasks/{taskId}/assign-self` | Self-assign to a task    |
-| PATCH  | `/api/tasks/{taskId}/status`      | Update task status       |
+| Method | Path                              | Description                                                                       |
+|--------|-----------------------------------|-----------------------------------------------------------------------------------|
+| POST   | `/api/projects/{projectId}/tasks` | Create a task (`OWNER`/`MANAGER`)                                                 |
+| GET    | `/api/projects/{projectId}/tasks` | List tasks in a project (members)                                                 |
+| PATCH  | `/api/tasks/{taskId}/assign-self` | Self-assign to a task (any project member)                                        |
+| PATCH  | `/api/tasks/{taskId}/status`      | Update task status (assignee, or `OWNER`/`MANAGER`)                               |
+| PATCH  | `/api/tasks/{taskId}`             | Partially update title/description/priority/assignee/due date (`OWNER`/`MANAGER`) |
+| DELETE | `/api/tasks/{taskId}`             | Delete a task and its comments (`OWNER`/`MANAGER`)                                |
 
 ### Comments - `/api/tasks/{taskId}/comments`
 
-| Method | Path | Description             |
-|--------|------|-------------------------|
-| POST   | `/`  | Add a comment to a task |
-| GET    | `/`  | List comments on a task |
+| Method | Path           | Description                                                |
+|--------|----------------|------------------------------------------------------------|
+| POST   | `/`            | Add a comment to a task (members)                          |
+| GET    | `/`            | List comments on a task (members)                          |
+| PATCH  | `/{commentId}` | Edit a comment (author, or `OWNER`/`MANAGER` moderation)   |
+| DELETE | `/{commentId}` | Delete a comment (author, or `OWNER`/`MANAGER` moderation) |
+
+Note on assignees: `assigneeId` on a task always refers to a `ProjectMember` id (a
+membership record), not a `User` id - and it must belong to that same project.
 
 ## Logging & log aggregation
 
