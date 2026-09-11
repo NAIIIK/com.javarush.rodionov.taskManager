@@ -7,6 +7,8 @@ spring:
     username: taskmanager
     password: taskmanager
     driver-class-name: org.postgresql.Driver
+    hikari:
+      keepalive-time: 60_000
 
   jpa:
     hibernate:
