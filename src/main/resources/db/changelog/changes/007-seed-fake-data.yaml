@@ -1,0 +1,600 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-seed-fake-data-users
+      author: nikita
+      comment: Fake users for local/dev environments (1 admin + 9 regular users).
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, value: '00000000-0000-0000-0000-000000000001' }
+              - column: { name: email, value: 'admin@taskmanager.local' }
+              - column: { name: password, value: '$2b$12$NBWLZJOfydWSnjaOM6JgQeFueBvCoRzAzZL3Nfgu.nuDPu.0mM0Ma' }
+              - column: { name: first_name, value: 'System' }
+              - column: { name: last_name, value: 'Administrator' }
+              - column: { name: global_role, value: 'ADMIN' }
+              - column: { name: created_at, valueDate: '2026-01-05 08:00:00' }
+              - column: { name: updated_at, valueDate: '2026-01-05 08:00:00' }
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, value: '00000000-0000-0000-0000-000000000002' }
+              - column: { name: email, value: 'alice.johnson@taskmanager.local' }
+              - column: { name: password, value: '$2b$12$55D/TzLL02E8GlXmQZ3Rue.18/utrJv1mL0I45coHCVrkKJDv6ZxS' }
+              - column: { name: first_name, value: 'Alice' }
+              - column: { name: last_name, value: 'Johnson' }
+              - column: { name: global_role, value: 'USER' }
+              - column: { name: created_at, valueDate: '2026-02-01 09:15:00' }
+              - column: { name: updated_at, valueDate: '2026-02-01 09:15:00' }
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, value: '00000000-0000-0000-0000-000000000003' }
+              - column: { name: email, value: 'bob.smith@taskmanager.local' }
+              - column: { name: password, value: '$2b$12$55D/TzLL02E8GlXmQZ3Rue.18/utrJv1mL0I45coHCVrkKJDv6ZxS' }
+              - column: { name: first_name, value: 'Bob' }
+              - column: { name: last_name, value: 'Smith' }
+              - column: { name: global_role, value: 'USER' }
+              - column: { name: created_at, valueDate: '2026-02-02 10:30:00' }
+              - column: { name: updated_at, valueDate: '2026-02-02 10:30:00' }
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, value: '00000000-0000-0000-0000-000000000004' }
+              - column: { name: email, value: 'carol.davis@taskmanager.local' }
+              - column: { name: password, value: '$2b$12$55D/TzLL02E8GlXmQZ3Rue.18/utrJv1mL0I45coHCVrkKJDv6ZxS' }
+              - column: { name: first_name, value: 'Carol' }
+              - column: { name: last_name, value: 'Davis' }
+              - column: { name: global_role, value: 'USER' }
+              - column: { name: created_at, valueDate: '2026-02-03 11:45:00' }
+              - column: { name: updated_at, valueDate: '2026-02-03 11:45:00' }
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, value: '00000000-0000-0000-0000-000000000005' }
+              - column: { name: email, value: 'dave.wilson@taskmanager.local' }
+              - column: { name: password, value: '$2b$12$55D/TzLL02E8GlXmQZ3Rue.18/utrJv1mL0I45coHCVrkKJDv6ZxS' }
+              - column: { name: first_name, value: 'Dave' }
+              - column: { name: last_name, value: 'Wilson' }
+              - column: { name: global_role, value: 'USER' }
+              - column: { name: created_at, valueDate: '2026-02-05 08:20:00' }
+              - column: { name: updated_at, valueDate: '2026-02-05 08:20:00' }
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, value: '00000000-0000-0000-0000-000000000006' }
+              - column: { name: email, value: 'erin.brown@taskmanager.local' }
+              - column: { name: password, value: '$2b$12$55D/TzLL02E8GlXmQZ3Rue.18/utrJv1mL0I45coHCVrkKJDv6ZxS' }
+              - column: { name: first_name, value: 'Erin' }
+              - column: { name: last_name, value: 'Brown' }
+              - column: { name: global_role, value: 'USER' }
+              - column: { name: created_at, valueDate: '2026-02-06 13:00:00' }
+              - column: { name: updated_at, valueDate: '2026-02-06 13:00:00' }
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, value: '00000000-0000-0000-0000-000000000007' }
+              - column: { name: email, value: 'frank.miller@taskmanager.local' }
+              - column: { name: password, value: '$2b$12$55D/TzLL02E8GlXmQZ3Rue.18/utrJv1mL0I45coHCVrkKJDv6ZxS' }
+              - column: { name: first_name, value: 'Frank' }
+              - column: { name: last_name, value: 'Miller' }
+              - column: { name: global_role, value: 'USER' }
+              - column: { name: created_at, valueDate: '2026-02-10 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-02-10 09:00:00' }
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, value: '00000000-0000-0000-0000-000000000008' }
+              - column: { name: email, value: 'grace.lee@taskmanager.local' }
+              - column: { name: password, value: '$2b$12$55D/TzLL02E8GlXmQZ3Rue.18/utrJv1mL0I45coHCVrkKJDv6ZxS' }
+              - column: { name: first_name, value: 'Grace' }
+              - column: { name: last_name, value: 'Lee' }
+              - column: { name: global_role, value: 'USER' }
+              - column: { name: created_at, valueDate: '2026-02-11 14:10:00' }
+              - column: { name: updated_at, valueDate: '2026-02-11 14:10:00' }
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, value: '00000000-0000-0000-0000-000000000009' }
+              - column: { name: email, value: 'heidi.clark@taskmanager.local' }
+              - column: { name: password, value: '$2b$12$55D/TzLL02E8GlXmQZ3Rue.18/utrJv1mL0I45coHCVrkKJDv6ZxS' }
+              - column: { name: first_name, value: 'Heidi' }
+              - column: { name: last_name, value: 'Clark' }
+              - column: { name: global_role, value: 'USER' }
+              - column: { name: created_at, valueDate: '2026-02-14 10:05:00' }
+              - column: { name: updated_at, valueDate: '2026-02-14 10:05:00' }
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, value: '0000000a-0000-0000-0000-00000000000a' }
+              - column: { name: email, value: 'ivan.petrov@taskmanager.local' }
+              - column: { name: password, value: '$2b$12$55D/TzLL02E8GlXmQZ3Rue.18/utrJv1mL0I45coHCVrkKJDv6ZxS' }
+              - column: { name: first_name, value: 'Ivan' }
+              - column: { name: last_name, value: 'Petrov' }
+              - column: { name: global_role, value: 'USER' }
+              - column: { name: created_at, valueDate: '2026-02-15 16:40:00' }
+              - column: { name: updated_at, valueDate: '2026-02-15 16:40:00' }
+
+  - changeSet:
+      id: 007-seed-fake-data-projects
+      author: nikita
+      comment: Fake projects, each owned by a different regular user.
+      changes:
+        - insert:
+            tableName: projects
+            columns:
+              - column: { name: id, value: '10000000-0000-0000-0000-000000000001' }
+              - column: { name: name, value: 'Website Redesign' }
+              - column: { name: description, value: 'Redesign of the corporate marketing website and blog.' }
+              - column: { name: owner_id, value: '00000000-0000-0000-0000-000000000002' }
+              - column: { name: created_at, valueDate: '2026-03-01 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-01 09:00:00' }
+        - insert:
+            tableName: projects
+            columns:
+              - column: { name: id, value: '10000000-0000-0000-0000-000000000002' }
+              - column: { name: name, value: 'Mobile App Launch' }
+              - column: { name: description, value: 'Native iOS/Android app for the customer loyalty program.' }
+              - column: { name: owner_id, value: '00000000-0000-0000-0000-000000000003' }
+              - column: { name: created_at, valueDate: '2026-03-10 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-10 09:00:00' }
+        - insert:
+            tableName: projects
+            columns:
+              - column: { name: id, value: '10000000-0000-0000-0000-000000000003' }
+              - column: { name: name, value: 'Internal Tools Migration' }
+              - column: { name: description, value: 'Migrate legacy internal tooling to the new platform.' }
+              - column: { name: owner_id, value: '00000000-0000-0000-0000-000000000004' }
+              - column: { name: created_at, valueDate: '2026-03-20 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-20 09:00:00' }
+
+  - changeSet:
+      id: 007-seed-fake-data-project-members
+      author: nikita
+      comment: Project membership - one OWNER, one or two MANAGERs, several MEMBERs per project.
+      changes:
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '21000000-0000-0000-0000-000000000001' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000001' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000002' }
+              - column: { name: role, value: 'OWNER' }
+              - column: { name: joined_at, valueDate: '2026-03-01 09:00:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '21000000-0000-0000-0000-000000000002' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000001' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000003' }
+              - column: { name: role, value: 'MANAGER' }
+              - column: { name: joined_at, valueDate: '2026-03-01 09:05:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '21000000-0000-0000-0000-000000000003' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000001' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000004' }
+              - column: { name: role, value: 'MEMBER' }
+              - column: { name: joined_at, valueDate: '2026-03-02 10:00:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '21000000-0000-0000-0000-000000000004' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000001' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000005' }
+              - column: { name: role, value: 'MEMBER' }
+              - column: { name: joined_at, valueDate: '2026-03-02 10:05:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '21000000-0000-0000-0000-000000000005' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000001' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000006' }
+              - column: { name: role, value: 'MEMBER' }
+              - column: { name: joined_at, valueDate: '2026-03-03 11:00:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '22000000-0000-0000-0000-000000000001' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000002' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000003' }
+              - column: { name: role, value: 'OWNER' }
+              - column: { name: joined_at, valueDate: '2026-03-10 09:00:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '22000000-0000-0000-0000-000000000002' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000002' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000004' }
+              - column: { name: role, value: 'MANAGER' }
+              - column: { name: joined_at, valueDate: '2026-03-10 09:05:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '22000000-0000-0000-0000-000000000003' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000002' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000005' }
+              - column: { name: role, value: 'MANAGER' }
+              - column: { name: joined_at, valueDate: '2026-03-10 09:10:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '22000000-0000-0000-0000-000000000004' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000002' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000006' }
+              - column: { name: role, value: 'MEMBER' }
+              - column: { name: joined_at, valueDate: '2026-03-11 10:00:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '22000000-0000-0000-0000-000000000005' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000002' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000007' }
+              - column: { name: role, value: 'MEMBER' }
+              - column: { name: joined_at, valueDate: '2026-03-11 10:05:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '22000000-0000-0000-0000-000000000006' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000002' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000008' }
+              - column: { name: role, value: 'MEMBER' }
+              - column: { name: joined_at, valueDate: '2026-03-12 12:00:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '23000000-0000-0000-0000-000000000001' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000003' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000004' }
+              - column: { name: role, value: 'OWNER' }
+              - column: { name: joined_at, valueDate: '2026-03-20 09:00:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '23000000-0000-0000-0000-000000000002' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000003' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000006' }
+              - column: { name: role, value: 'MANAGER' }
+              - column: { name: joined_at, valueDate: '2026-03-20 09:05:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '23000000-0000-0000-0000-000000000003' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000003' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000007' }
+              - column: { name: role, value: 'MEMBER' }
+              - column: { name: joined_at, valueDate: '2026-03-21 10:00:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '23000000-0000-0000-0000-000000000004' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000003' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000008' }
+              - column: { name: role, value: 'MEMBER' }
+              - column: { name: joined_at, valueDate: '2026-03-21 10:05:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '23000000-0000-0000-0000-000000000005' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000003' }
+              - column: { name: user_id, value: '00000000-0000-0000-0000-000000000009' }
+              - column: { name: role, value: 'MEMBER' }
+              - column: { name: joined_at, valueDate: '2026-03-22 11:00:00' }
+        - insert:
+            tableName: project_members
+            columns:
+              - column: { name: id, value: '23000000-0000-0000-0000-000000000006' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000003' }
+              - column: { name: user_id, value: '0000000a-0000-0000-0000-00000000000a' }
+              - column: { name: role, value: 'MEMBER' }
+              - column: { name: joined_at, valueDate: '2026-03-22 11:05:00' }
+
+  - changeSet:
+      id: 007-seed-fake-data-tasks
+      author: nikita
+      comment: Fake tasks spread across statuses and priorities, mostly assigned to project members.
+      changes:
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '31000000-0000-0000-0000-000000000001' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000001' }
+              - column: { name: title, value: 'Design new homepage layout' }
+              - column: { name: description, value: 'Create wireframes and high-fidelity mockups for the homepage.' }
+              - column: { name: status, value: 'DONE' }
+              - column: { name: priority, value: 'HIGH' }
+              - column: { name: assignee_id, value: '21000000-0000-0000-0000-000000000003' }
+              - column: { name: due_date, valueDate: '2026-03-10' }
+              - column: { name: created_at, valueDate: '2026-03-02 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-02 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '31000000-0000-0000-0000-000000000002' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000001' }
+              - column: { name: title, value: 'Set up CMS content model' }
+              - column: { name: description, value: 'Define content types and fields for the new CMS.' }
+              - column: { name: status, value: 'IN_PROGRESS' }
+              - column: { name: priority, value: 'MEDIUM' }
+              - column: { name: assignee_id, value: '21000000-0000-0000-0000-000000000004' }
+              - column: { name: due_date, valueDate: '2026-03-25' }
+              - column: { name: created_at, valueDate: '2026-03-03 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-03 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '31000000-0000-0000-0000-000000000003' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000001' }
+              - column: { name: title, value: 'Migrate blog posts' }
+              - column: { name: description, value: 'Migrate existing blog posts from the old platform.' }
+              - column: { name: status, value: 'TO_DO' }
+              - column: { name: priority, value: 'LOW' }
+              - column: { name: assignee_id, value: '21000000-0000-0000-0000-000000000005' }
+              - column: { name: due_date, valueDate: '2026-04-05' }
+              - column: { name: created_at, valueDate: '2026-03-04 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-04 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '31000000-0000-0000-0000-000000000004' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000001' }
+              - column: { name: title, value: 'Implement responsive navigation' }
+              - column: { name: description, value: 'Build the new responsive nav bar component.' }
+              - column: { name: status, value: 'IN_CODE_REVIEW' }
+              - column: { name: priority, value: 'HIGH' }
+              - column: { name: assignee_id, value: '21000000-0000-0000-0000-000000000002' }
+              - column: { name: due_date, valueDate: '2026-03-28' }
+              - column: { name: created_at, valueDate: '2026-03-05 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-05 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '31000000-0000-0000-0000-000000000005' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000001' }
+              - column: { name: title, value: 'Accessibility audit' }
+              - column: { name: description, value: 'Run an accessibility audit and fix critical issues.' }
+              - column: { name: status, value: 'TO_DO' }
+              - column: { name: priority, value: 'MEDIUM' }
+              - column: { name: due_date, valueDate: '2026-04-10' }
+              - column: { name: created_at, valueDate: '2026-03-06 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-06 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '32000000-0000-0000-0000-000000000001' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000002' }
+              - column: { name: title, value: 'Define app navigation flow' }
+              - column: { name: description, value: 'Map out the core navigation and screen flow for the app.' }
+              - column: { name: status, value: 'DONE' }
+              - column: { name: priority, value: 'HIGH' }
+              - column: { name: assignee_id, value: '22000000-0000-0000-0000-000000000002' }
+              - column: { name: due_date, valueDate: '2026-03-18' }
+              - column: { name: created_at, valueDate: '2026-03-11 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-11 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '32000000-0000-0000-0000-000000000002' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000002' }
+              - column: { name: title, value: 'Implement push notifications' }
+              - column: { name: description, value: 'Integrate push notifications for loyalty offers.' }
+              - column: { name: status, value: 'IN_PROGRESS' }
+              - column: { name: priority, value: 'HIGH' }
+              - column: { name: assignee_id, value: '22000000-0000-0000-0000-000000000003' }
+              - column: { name: due_date, valueDate: '2026-04-01' }
+              - column: { name: created_at, valueDate: '2026-03-12 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-12 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '32000000-0000-0000-0000-000000000003' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000002' }
+              - column: { name: title, value: 'Build loyalty points screen' }
+              - column: { name: description, value: 'Screen showing user''s points balance and history.' }
+              - column: { name: status, value: 'IN_PROGRESS' }
+              - column: { name: priority, value: 'MEDIUM' }
+              - column: { name: assignee_id, value: '22000000-0000-0000-0000-000000000004' }
+              - column: { name: due_date, valueDate: '2026-04-02' }
+              - column: { name: created_at, valueDate: '2026-03-13 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-13 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '32000000-0000-0000-0000-000000000004' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000002' }
+              - column: { name: title, value: 'Set up crash reporting' }
+              - column: { name: description, value: 'Integrate crash reporting and analytics SDK.' }
+              - column: { name: status, value: 'TO_DO' }
+              - column: { name: priority, value: 'MEDIUM' }
+              - column: { name: assignee_id, value: '22000000-0000-0000-0000-000000000005' }
+              - column: { name: due_date, valueDate: '2026-04-08' }
+              - column: { name: created_at, valueDate: '2026-03-14 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-14 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '32000000-0000-0000-0000-000000000005' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000002' }
+              - column: { name: title, value: 'App store listing assets' }
+              - column: { name: description, value: 'Prepare screenshots and copy for app store listings.' }
+              - column: { name: status, value: 'TO_DO' }
+              - column: { name: priority, value: 'LOW' }
+              - column: { name: assignee_id, value: '22000000-0000-0000-0000-000000000006' }
+              - column: { name: due_date, valueDate: '2026-04-15' }
+              - column: { name: created_at, valueDate: '2026-03-15 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-15 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '33000000-0000-0000-0000-000000000001' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000003' }
+              - column: { name: title, value: 'Inventory legacy tools' }
+              - column: { name: description, value: 'Catalogue all internal tools scheduled for migration.' }
+              - column: { name: status, value: 'DONE' }
+              - column: { name: priority, value: 'MEDIUM' }
+              - column: { name: assignee_id, value: '23000000-0000-0000-0000-000000000002' }
+              - column: { name: due_date, valueDate: '2026-03-25' }
+              - column: { name: created_at, valueDate: '2026-03-21 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-21 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '33000000-0000-0000-0000-000000000002' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000003' }
+              - column: { name: title, value: 'Migrate ticketing tool' }
+              - column: { name: description, value: 'Move internal ticketing tool to the new platform.' }
+              - column: { name: status, value: 'IN_PROGRESS' }
+              - column: { name: priority, value: 'HIGH' }
+              - column: { name: assignee_id, value: '23000000-0000-0000-0000-000000000003' }
+              - column: { name: due_date, valueDate: '2026-04-10' }
+              - column: { name: created_at, valueDate: '2026-03-22 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-22 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '33000000-0000-0000-0000-000000000003' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000003' }
+              - column: { name: title, value: 'Migrate reporting dashboards' }
+              - column: { name: description, value: 'Rebuild internal reporting dashboards.' }
+              - column: { name: status, value: 'TO_DO' }
+              - column: { name: priority, value: 'HIGH' }
+              - column: { name: assignee_id, value: '23000000-0000-0000-0000-000000000004' }
+              - column: { name: due_date, valueDate: '2026-04-18' }
+              - column: { name: created_at, valueDate: '2026-03-23 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-23 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '33000000-0000-0000-0000-000000000004' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000003' }
+              - column: { name: title, value: 'Write migration runbook' }
+              - column: { name: description, value: 'Document the migration steps and rollback plan.' }
+              - column: { name: status, value: 'IN_CODE_REVIEW' }
+              - column: { name: priority, value: 'MEDIUM' }
+              - column: { name: assignee_id, value: '23000000-0000-0000-0000-000000000001' }
+              - column: { name: due_date, valueDate: '2026-04-05' }
+              - column: { name: created_at, valueDate: '2026-03-24 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-24 09:00:00' }
+        - insert:
+            tableName: tasks
+            columns:
+              - column: { name: id, value: '33000000-0000-0000-0000-000000000005' }
+              - column: { name: project_id, value: '10000000-0000-0000-0000-000000000003' }
+              - column: { name: title, value: 'Decommission old servers' }
+              - column: { name: description, value: 'Shut down legacy servers after migration is verified.' }
+              - column: { name: status, value: 'TO_DO' }
+              - column: { name: priority, value: 'LOW' }
+              - column: { name: due_date, valueDate: '2026-05-01' }
+              - column: { name: created_at, valueDate: '2026-03-25 09:00:00' }
+              - column: { name: updated_at, valueDate: '2026-03-25 09:00:00' }
+
+  - changeSet:
+      id: 007-seed-fake-data-comments
+      author: nikita
+      comment: Fake comments on some of the tasks above.
+      changes:
+        - insert:
+            tableName: comments
+            columns:
+              - column: { name: id, value: '41000000-0000-0000-0000-000000000001' }
+              - column: { name: task_id, value: '31000000-0000-0000-0000-000000000001' }
+              - column: { name: author_id, value: '21000000-0000-0000-0000-000000000003' }
+              - column: { name: text, value: 'Wireframes are up in Figma, ready for review.' }
+              - column: { name: created_at, valueDate: '2026-03-06 10:00:00' }
+        - insert:
+            tableName: comments
+            columns:
+              - column: { name: id, value: '41000000-0000-0000-0000-000000000002' }
+              - column: { name: task_id, value: '31000000-0000-0000-0000-000000000001' }
+              - column: { name: author_id, value: '21000000-0000-0000-0000-000000000001' }
+              - column: { name: text, value: 'Looks great, approved for high-fidelity pass.' }
+              - column: { name: created_at, valueDate: '2026-03-07 09:30:00' }
+        - insert:
+            tableName: comments
+            columns:
+              - column: { name: id, value: '41000000-0000-0000-0000-000000000003' }
+              - column: { name: task_id, value: '31000000-0000-0000-0000-000000000002' }
+              - column: { name: author_id, value: '21000000-0000-0000-0000-000000000004' }
+              - column: { name: text, value: 'Drafted the content types, will share for feedback tomorrow.' }
+              - column: { name: created_at, valueDate: '2026-03-08 15:00:00' }
+        - insert:
+            tableName: comments
+            columns:
+              - column: { name: id, value: '41000000-0000-0000-0000-000000000004' }
+              - column: { name: task_id, value: '31000000-0000-0000-0000-000000000004' }
+              - column: { name: author_id, value: '21000000-0000-0000-0000-000000000002' }
+              - column: { name: text, value: 'PR is up, added tests for mobile breakpoints.' }
+              - column: { name: created_at, valueDate: '2026-03-20 11:00:00' }
+        - insert:
+            tableName: comments
+            columns:
+              - column: { name: id, value: '41000000-0000-0000-0000-000000000005' }
+              - column: { name: task_id, value: '31000000-0000-0000-0000-000000000004' }
+              - column: { name: author_id, value: '21000000-0000-0000-0000-000000000003' }
+              - column: { name: text, value: 'Left a couple of comments on the PR, mostly nits.' }
+              - column: { name: created_at, valueDate: '2026-03-20 16:45:00' }
+        - insert:
+            tableName: comments
+            columns:
+              - column: { name: id, value: '42000000-0000-0000-0000-000000000001' }
+              - column: { name: task_id, value: '32000000-0000-0000-0000-000000000001' }
+              - column: { name: author_id, value: '22000000-0000-0000-0000-000000000002' }
+              - column: { name: text, value: 'Flow diagram attached, moving to implementation.' }
+              - column: { name: created_at, valueDate: '2026-03-16 09:00:00' }
+        - insert:
+            tableName: comments
+            columns:
+              - column: { name: id, value: '42000000-0000-0000-0000-000000000002' }
+              - column: { name: task_id, value: '32000000-0000-0000-0000-000000000002' }
+              - column: { name: author_id, value: '22000000-0000-0000-0000-000000000003' }
+              - column: { name: text, value: 'Push provider is integrated, testing on staging now.' }
+              - column: { name: created_at, valueDate: '2026-03-22 14:00:00' }
+        - insert:
+            tableName: comments
+            columns:
+              - column: { name: id, value: '42000000-0000-0000-0000-000000000003' }
+              - column: { name: task_id, value: '32000000-0000-0000-0000-000000000002' }
+              - column: { name: author_id, value: '22000000-0000-0000-0000-000000000001' }
+              - column: { name: text, value: 'Nice, let''s schedule a QA pass this week.' }
+              - column: { name: created_at, valueDate: '2026-03-22 17:10:00' }
+        - insert:
+            tableName: comments
+            columns:
+              - column: { name: id, value: '42000000-0000-0000-0000-000000000004' }
+              - column: { name: task_id, value: '32000000-0000-0000-0000-000000000003' }
+              - column: { name: author_id, value: '22000000-0000-0000-0000-000000000004' }
+              - column: { name: text, value: 'Points history endpoint is ready, wiring up the UI.' }
+              - column: { name: created_at, valueDate: '2026-03-23 10:20:00' }
+        - insert:
+            tableName: comments
+            columns:
+              - column: { name: id, value: '43000000-0000-0000-0000-000000000001' }
+              - column: { name: task_id, value: '33000000-0000-0000-0000-000000000001' }
+              - column: { name: author_id, value: '23000000-0000-0000-0000-000000000002' }
+              - column: { name: text, value: 'Inventory spreadsheet is complete, 14 tools identified.' }
+              - column: { name: created_at, valueDate: '2026-03-24 09:00:00' }
+        - insert:
+            tableName: comments
+            columns:
+              - column: { name: id, value: '43000000-0000-0000-0000-000000000002' }
+              - column: { name: task_id, value: '33000000-0000-0000-0000-000000000002' }
+              - column: { name: author_id, value: '23000000-0000-0000-0000-000000000003' }
+              - column: { name: text, value: 'Ticketing tool migration is 60% done, no blockers so far.' }
+              - column: { name: created_at, valueDate: '2026-03-28 13:30:00' }
+        - insert:
+            tableName: comments
+            columns:
+              - column: { name: id, value: '43000000-0000-0000-0000-000000000003' }
+              - column: { name: task_id, value: '33000000-0000-0000-0000-000000000004' }
+              - column: { name: author_id, value: '23000000-0000-0000-0000-000000000002' }
+              - column: { name: text, value: 'Runbook draft looks solid, add a rollback checklist section.' }
+              - column: { name: created_at, valueDate: '2026-03-27 10:00:00' }
+        - insert:
+            tableName: comments
+            columns:
+              - column: { name: id, value: '43000000-0000-0000-0000-000000000004' }
+              - column: { name: task_id, value: '33000000-0000-0000-0000-000000000004' }
+              - column: { name: author_id, value: '23000000-0000-0000-0000-000000000001' }
+              - column: { name: text, value: 'Added the rollback checklist, ready for another pass.' }
+              - column: { name: created_at, valueDate: '2026-03-27 15:40:00' }
