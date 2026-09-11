@@ -4,6 +4,7 @@ import com.javarush.taskmanager.exception.ApiError;
 import com.javarush.taskmanager.security.CurrentUserId;
 import com.javarush.taskmanager.task.dto.CreateTaskRequest;
 import com.javarush.taskmanager.task.dto.TaskResponse;
+import com.javarush.taskmanager.task.dto.UpdateTaskRequest;
 import com.javarush.taskmanager.task.dto.UpdateTaskStatusRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -139,5 +140,56 @@ public class TaskController {
             @Parameter(hidden = true) @CurrentUserId UUID userId,
             @Valid @RequestBody UpdateTaskStatusRequest request) {
         return ResponseEntity.ok(taskService.updateStatus(taskId, userId, request));
+    }
+
+    @Operation(
+            summary = "Update a task",
+            description = """
+                    Partially updates a task's title, description, priority, assignee, and/or due date.
+                    Only non-null fields in the request are applied; omitted fields are left unchanged.
+                    Requires the OWNER or MANAGER role in the task's project.
+                    """
+    )
+    @ApiResponse(responseCode = "200", description = "Task updated",
+            content = @Content(schema = @Schema(implementation = TaskResponse.class)))
+    @ApiResponse(
+            responseCode = "400",
+            description = """
+                           Validation error, OR assigneeId refers to a member
+                           who does not belong to this project
+                           """,
+            content = @Content(schema = @Schema(implementation = ApiError.class))
+    )
+    @ApiResponse(responseCode = "401", description = "Access token is missing or invalid",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "403", description = "The user is not a member of the project, or their role is below MANAGER",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "404", description = "A task with this id does not exist",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @PatchMapping("/api/tasks/{taskId}")
+    public ResponseEntity<TaskResponse> updateTask(
+            @PathVariable UUID taskId,
+            @Parameter(hidden = true) @CurrentUserId UUID userId,
+            @Valid @RequestBody UpdateTaskRequest request) {
+        return ResponseEntity.ok(taskService.updateTask(taskId, userId, request));
+    }
+
+    @Operation(
+            summary = "Delete a task",
+            description = "Deletes a task, along with its comments. Requires the OWNER or MANAGER role in the task's project."
+    )
+    @ApiResponse(responseCode = "204", description = "Task deleted")
+    @ApiResponse(responseCode = "401", description = "Access token is missing or invalid",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "403", description = "The user is not a member of the project, or their role is below MANAGER",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "404", description = "A task with this id does not exist",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @DeleteMapping("/api/tasks/{taskId}")
+    public ResponseEntity<Void> deleteTask(
+            @PathVariable UUID taskId,
+            @Parameter(hidden = true) @CurrentUserId UUID userId) {
+        taskService.deleteTask(taskId, userId);
+        return ResponseEntity.noContent().build();
     }
 }

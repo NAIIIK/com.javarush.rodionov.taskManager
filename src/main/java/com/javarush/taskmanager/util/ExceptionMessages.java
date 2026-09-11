@@ -5,6 +5,7 @@ public final class ExceptionMessages {
     private ExceptionMessages() {}
 
     public static final String NOT_A_MEMBER_MSG = "You are not a member of this project";
+    public static final String ASSIGNEE_IS_NOT_A_MEMBER_MSG = "Assignee is not a member of this project";
     public static final String INVALID_CREDENTIALS_MSG = "Invalid credentials";
 
     public static final String PROJECT_NOT_FOUND_MSG = "Project not found: ";
