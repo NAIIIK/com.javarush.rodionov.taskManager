@@ -89,9 +89,13 @@ services:
     container_name: taskmanager-filebeat
     user: root
     volumes:
-      - ./elk/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./elk/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml.orig:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    entrypoint: >
+      sh -c "cp /usr/share/filebeat/filebeat.yml.orig /usr/share/filebeat/filebeat.yml &&
+             chmod go-w /usr/share/filebeat/filebeat.yml &&
+             /usr/local/bin/docker-entrypoint -e"
     depends_on:
       - logstash
       - app
