@@ -10,4 +10,5 @@ public final class ExceptionMessages {
     public static final String PROJECT_NOT_FOUND_MSG = "Project not found: ";
     public static final String USER_NOT_FOUND_MSG = "User not found: ";
     public static final String TASK_NOT_FOUND_MSG = "Task not found: ";
+    public static final String COMMENT_NOT_FOUND_MSG = "Comment not found: ";
 }

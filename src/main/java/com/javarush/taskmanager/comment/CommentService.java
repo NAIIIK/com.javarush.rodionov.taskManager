@@ -2,10 +2,12 @@ package com.javarush.taskmanager.comment;
 
 import com.javarush.taskmanager.comment.dto.CommentResponse;
 import com.javarush.taskmanager.comment.dto.CreateCommentRequest;
+import com.javarush.taskmanager.comment.dto.UpdateCommentRequest;
 import com.javarush.taskmanager.exception.ResourceNotFoundException;
 import com.javarush.taskmanager.project.member.ProjectAccessGuard;
 import com.javarush.taskmanager.project.member.ProjectMember;
 import com.javarush.taskmanager.project.member.ProjectMemberRepository;
+import com.javarush.taskmanager.project.member.ProjectRole;
 import com.javarush.taskmanager.task.Task;
 import com.javarush.taskmanager.task.TaskRepository;
 import java.util.List;
@@ -54,6 +56,47 @@ public class CommentService {
         return commentRepository.findAllByTaskId(taskId).stream()
                 .map(commentMapper::toResponse)
                 .toList();
+    }
+
+    public CommentResponse updateComment(UUID taskId, UUID commentId, UUID requesterId, UpdateCommentRequest request) {
+        Task task = getTaskOrThrow(taskId);
+        UUID projectId = task.getProject().getId();
+
+        ProjectMember requester = projectMemberRepository.findByProjectIdAndUserId(projectId, requesterId)
+                .orElseThrow(() -> new AccessDeniedException(ExceptionMessages.NOT_A_MEMBER_MSG));
+
+        Comment comment = getCommentOrThrow(taskId, commentId);
+        requireAuthorOrModerator(comment, requester);
+
+        comment.setText(request.text());
+        return commentMapper.toResponse(comment);
+    }
+
+    public void deleteComment(UUID taskId, UUID commentId, UUID requesterId) {
+        Task task = getTaskOrThrow(taskId);
+        UUID projectId = task.getProject().getId();
+
+        ProjectMember requester = projectMemberRepository.findByProjectIdAndUserId(projectId, requesterId)
+                .orElseThrow(() -> new AccessDeniedException(ExceptionMessages.NOT_A_MEMBER_MSG));
+
+        Comment comment = getCommentOrThrow(taskId, commentId);
+        requireAuthorOrModerator(comment, requester);
+
+        commentRepository.delete(comment);
+    }
+
+    private void requireAuthorOrModerator(Comment comment, ProjectMember requester) {
+        boolean isAuthor = comment.getAuthor().getId().equals(requester.getId());
+        boolean isModerator = requester.getRole().getWeight() <= ProjectRole.MANAGER.getWeight();
+
+        if (!isAuthor && !isModerator) {
+            throw new AccessDeniedException("Only the comment's author or a manager/owner can modify this comment");
+        }
+    }
+
+    private Comment getCommentOrThrow(UUID taskId, UUID commentId) {
+        return commentRepository.findByIdAndTaskId(commentId, taskId)
+                .orElseThrow(() -> new ResourceNotFoundException(ExceptionMessages.COMMENT_NOT_FOUND_MSG + commentId));
     }
 
     private Task getTaskOrThrow(UUID taskId) {
