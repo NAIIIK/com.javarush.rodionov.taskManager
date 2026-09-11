@@ -67,9 +67,12 @@ class TaskServiceTest {
         UUID projectId = UUID.randomUUID();
         UUID requesterId = UUID.randomUUID();
         CreateTaskRequest request = new CreateTaskRequest("Title", "Desc", null, null, null);
+        Project project = Project.builder().id(projectId).name("Project").build();
 
         org.mockito.Mockito.doThrow(new AccessDeniedException("Requires role MANAGER or higher"))
                 .when(projectAccessGuard).requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
 
         assertThatThrownBy(() -> taskService.createTask(projectId, requesterId, request))
                 .isInstanceOf(AccessDeniedException.class);
