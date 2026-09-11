@@ -9,9 +9,12 @@ import com.javarush.taskmanager.project.member.ProjectMemberRepository;
 import com.javarush.taskmanager.project.member.ProjectRole;
 import com.javarush.taskmanager.task.dto.CreateTaskRequest;
 import com.javarush.taskmanager.task.dto.TaskResponse;
+import com.javarush.taskmanager.task.dto.UpdateTaskRequest;
 import com.javarush.taskmanager.task.dto.UpdateTaskStatusRequest;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.javarush.taskmanager.util.ExceptionMessages;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,14 +26,15 @@ import org.springframework.security.access.AccessDeniedException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TaskServiceTest {
 
     private static final String TASK_TITLE = "Title";
+    private static final String NEW_TASK_TITLE = "New Title";
     private static final String TASK_DESC = "Description";
+    private static final String NEW_TASK_DESC = "New Description";
 
     private final UUID projectId = UUID.randomUUID();
     private final UUID taskId = UUID.randomUUID();
@@ -91,7 +95,7 @@ class TaskServiceTest {
         CreateTaskRequest request = new CreateTaskRequest(TASK_TITLE, TASK_DESC, null, null, null);
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
-        doThrow(new AccessDeniedException("Requires role MANAGER or higher"))
+        doThrow(new AccessDeniedException(ExceptionMessages.REQUIRES_MANAGER_ROLE_OR_HIGHER_MSG))
                 .when(projectAccessGuard).requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
 
         assertThatThrownBy(() -> taskService.createTask(projectId, requesterId, request))
@@ -153,6 +157,83 @@ class TaskServiceTest {
 
         assertThatThrownBy(() -> taskService.updateStatus(taskId, requesterId, request))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void updateTask_requesterIsManager_updatesFields() {
+        Task task = createTestTask(assigneeMember);
+        ProjectMember newAssignee = ProjectMember.builder().id(otherMemberId).project(project).role(ProjectRole.MEMBER).build();
+        UpdateTaskRequest request = new UpdateTaskRequest(NEW_TASK_TITLE, NEW_TASK_DESC, TaskPriority.HIGH, otherMemberId, null);
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(projectMemberRepository.findById(otherMemberId)).thenReturn(Optional.of(newAssignee));
+        when(taskMapper.toResponse(task))
+                .thenReturn(new TaskResponse(taskId, projectId, NEW_TASK_TITLE, NEW_TASK_DESC,
+                        TaskStatus.TO_DO, TaskPriority.HIGH, otherMemberId, null, null));
+
+        TaskResponse response = taskService.updateTask(taskId, requesterId, request);
+
+        assertThat(response.title()).isEqualTo(NEW_TASK_TITLE);
+        assertThat(task.getTitle()).isEqualTo(NEW_TASK_TITLE);
+        assertThat(task.getAssignee()).isEqualTo(newAssignee);
+    }
+
+    @Test
+    void updateTask_requesterIsMember_throwsAccessDenied() {
+        Task task = createTestTask(assigneeMember);
+        UpdateTaskRequest request = new UpdateTaskRequest(NEW_TASK_TITLE, null, null, null, null);
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        doThrow(new AccessDeniedException(ExceptionMessages.REQUIRES_MANAGER_ROLE_OR_HIGHER_MSG))
+                .when(projectAccessGuard).requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
+
+        assertThatThrownBy(() -> taskService.updateTask(taskId, requesterId, request))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void updateTask_assigneeNotInProject_throwsIllegalArgument() {
+        Task task = createTestTask(assigneeMember);
+        UUID foreignMemberId = UUID.randomUUID();
+        Project otherProject = Project.builder().id(UUID.randomUUID()).build();
+        ProjectMember foreignMember = ProjectMember.builder().id(foreignMemberId).project(otherProject).role(ProjectRole.MEMBER).build();
+        UpdateTaskRequest request = new UpdateTaskRequest(null, null, null, foreignMemberId, null);
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(projectMemberRepository.findById(foreignMemberId)).thenReturn(Optional.of(foreignMember));
+
+        assertThatThrownBy(() -> taskService.updateTask(taskId, requesterId, request))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void updateTask_taskNotFound_throwsResourceNotFound() {
+        UpdateTaskRequest request = new UpdateTaskRequest(NEW_TASK_TITLE, null, null, null, null);
+        when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> taskService.updateTask(taskId, requesterId, request))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void deleteTask_requesterIsManager_deletesTask() {
+        Task task = createTestTask(assigneeMember);
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+
+        taskService.deleteTask(taskId, requesterId);
+
+        verify(taskRepository).delete(task);
+    }
+
+    @Test
+    void deleteTask_requesterIsMember_throwsAccessDenied() {
+        Task task = createTestTask(assigneeMember);
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        doThrow(new AccessDeniedException(ExceptionMessages.REQUIRES_MANAGER_ROLE_OR_HIGHER_MSG))
+                .when(projectAccessGuard).requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
+
+        assertThatThrownBy(() -> taskService.deleteTask(taskId, requesterId))
+                .isInstanceOf(AccessDeniedException.class);
     }
 
     private Task createTestTask(ProjectMember assignee) {

@@ -155,7 +155,9 @@ class GlobalExceptionHandlerTest {
     @Test
     void handleValidation_returnsFirstFieldErrorMessage() {
         when(request.getRequestURI()).thenReturn(API_PROJECTS);
-        MethodArgumentNotValidException ex = createValidationException("must not be blank");
+        String mustNotBeBlankMsg = "must not be blank";
+
+        MethodArgumentNotValidException ex = createValidationException(mustNotBeBlankMsg);
 
         ResponseEntity<ApiError> response = handler.handleValidation(ex, request);
 
@@ -163,7 +165,7 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody())
                 .isNotNull()
                 .extracting(apiError -> apiError != null ? apiError.message() : null)
-                .isEqualTo("must not be blank");
+                .isEqualTo(mustNotBeBlankMsg);
     }
 
     @Test
@@ -195,8 +197,10 @@ class GlobalExceptionHandlerTest {
     }
 
     private MethodArgumentNotValidException createValidationException(String errorMessage) {
-        BindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "projectDto");
-        bindingResult.addError(new FieldError("projectDto", "name", errorMessage));
+        String projectDtoStr = "projectDto";
+
+        BindingResult bindingResult = new BeanPropertyBindingResult(new Object(), projectDtoStr);
+        bindingResult.addError(new FieldError(projectDtoStr, "name", errorMessage));
         return new MethodArgumentNotValidException(mock(MethodParameter.class), bindingResult);
     }
 }

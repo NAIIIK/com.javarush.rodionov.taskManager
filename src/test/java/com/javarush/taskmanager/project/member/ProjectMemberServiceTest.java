@@ -39,8 +39,6 @@ class ProjectMemberServiceTest {
     private static final String FIRST_NAME = "First";
     private static final String LAST_NAME = "Last";
 
-    private static final String REQUIRES_MANAGER_ROLE_OR_HIGHER_MSG = "Requires role MANAGER or higher";
-
     private final UUID projectId = UUID.randomUUID();
     private final UUID requesterId = UUID.randomUUID();
     private final UUID memberId = UUID.randomUUID();
@@ -109,7 +107,7 @@ class ProjectMemberServiceTest {
         AddMemberRequest request = new AddMemberRequest(NEW_USER_EMAIL, ProjectRole.MEMBER);
 
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
-        doThrow(new AccessDeniedException(REQUIRES_MANAGER_ROLE_OR_HIGHER_MSG))
+        doThrow(new AccessDeniedException(ExceptionMessages.REQUIRES_MANAGER_ROLE_OR_HIGHER_MSG))
                 .when(projectAccessGuard).requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
 
         assertThatThrownBy(() -> projectMemberService.addMember(projectId, requesterId, request))
@@ -228,7 +226,7 @@ class ProjectMemberServiceTest {
         UpdateMemberRoleRequest request = new UpdateMemberRoleRequest(ProjectRole.MANAGER);
 
         when(projectRepository.existsById(projectId)).thenReturn(true);
-        doThrow(new AccessDeniedException("Requires role OWNER or higher"))
+        doThrow(new AccessDeniedException(ExceptionMessages.REQUIRES_OWNER_ROLE_OR_HIGHER_MSG))
                 .when(projectAccessGuard).requireRoleAtLeast(projectId, requesterId, ProjectRole.OWNER);
 
         assertThatThrownBy(() -> projectMemberService.updateMemberRole(projectId, requesterId, memberId, request))
@@ -300,7 +298,7 @@ class ProjectMemberServiceTest {
     @Test
     void removeMember_requesterLacksRole_throwsAccessDenied() {
         when(projectRepository.existsById(projectId)).thenReturn(true);
-        doThrow(new AccessDeniedException(REQUIRES_MANAGER_ROLE_OR_HIGHER_MSG))
+        doThrow(new AccessDeniedException(ExceptionMessages.REQUIRES_MANAGER_ROLE_OR_HIGHER_MSG))
                 .when(projectAccessGuard).requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
 
         assertThatThrownBy(() -> projectMemberService.removeMember(projectId, requesterId, memberId))
