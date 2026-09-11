@@ -31,10 +31,10 @@ public class TaskService {
     private final TaskMapper taskMapper;
 
     public TaskResponse createTask(UUID projectId, UUID requesterId, CreateTaskRequest request) {
-        projectAccessGuard.requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
-
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + projectId));
+
+        projectAccessGuard.requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
 
         ProjectMember assignee = null;
         if (request.assigneeId() != null) {
