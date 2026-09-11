@@ -10,6 +10,8 @@ import com.javarush.taskmanager.user.User;
 import com.javarush.taskmanager.user.UserRepository;
 import java.util.List;
 import java.util.UUID;
+
+import com.javarush.taskmanager.util.ExceptionMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,8 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ProjectMemberService {
 
-    private static final String PROJECT_NOT_FOUND_MSG = "Project not found: ";
-
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
@@ -29,7 +29,7 @@ public class ProjectMemberService {
 
     public MemberResponse addMember(UUID projectId, UUID requesterId, AddMemberRequest request) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException(PROJECT_NOT_FOUND_MSG + projectId));
+                .orElseThrow(() -> new ResourceNotFoundException(ExceptionMessages.PROJECT_NOT_FOUND_MSG + projectId));
 
         projectAccessGuard.requireRoleAtLeast(projectId, requesterId, ProjectRole.MANAGER);
 
@@ -102,7 +102,7 @@ public class ProjectMemberService {
 
     private void projectExists(UUID projectId) {
         if (!projectRepository.existsById(projectId)) {
-            throw new ResourceNotFoundException(PROJECT_NOT_FOUND_MSG + projectId);
+            throw new ResourceNotFoundException(ExceptionMessages.PROJECT_NOT_FOUND_MSG + projectId);
         }
     }
 }
