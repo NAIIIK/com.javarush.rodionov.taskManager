@@ -123,20 +123,13 @@ docker compose up --build
 
 Задаются в `.env` (скопируйте из `.env.example`), используются в `docker-compose.yaml`:
 
-| Переменная          | Описание                                 | Значение в `.env.example` |
-|---------------------|------------------------------------------|---------------------------|
-| `JWT_SECRET`        | Секрет для подписи access-токенов (HMAC) | небезопасная dev-заглушка |
-| `POSTGRES_USER`     | Пользователь БД                          | `postgres`                |
-| `POSTGRES_PASSWORD` | Пароль БД                                | `postgres`                |
-
-Если переменная не задана, `docker-compose.yaml` подставляет `taskmanager` /
-`taskmanager` для логина/пароля БД и ту же небезопасную заглушку для `JWT_SECRET`.
-
-`LOG_PATH` (директория для файла логов, по умолчанию `logs`) читается в
-`logback-spring.xml`, но актуальна только для локального запуска
-(`./mvnw spring-boot:run`) - в `.env.example` её нет, и Docker Compose её не
-пробрасывает, так как профиль `docker` пишет логи только в stdout (см.
-[Логирование](#логирование-и-сбор-логов)).
+| Переменная                 | Описание                                 | Значение в `.env.example` |
+|----------------------------|------------------------------------------|---------------------------|
+| `JWT_SECRET`               | Секрет для подписи access-токенов (HMAC) | небезопасная dev-заглушка |
+| `POSTGRES_USER`            | Пользователь БД                          | `postgres`                |
+| `POSTGRES_PASSWORD`        | Пароль БД                                | `postgres`                |
+| `PGADMIN_DEFAULT_EMAIL`    | Эл. почта pgAdmin                        | `admin@taskmanager.com`   |
+| `PGADMIN_DEFAULT_PASSWORD` | Пароль pgAdmin                           | `admin`                   |
 
 ### Демо-данные (seed-миграция)
 

@@ -120,21 +120,13 @@ entirely - you get plain-text console + file logs, see
 
 Defined in `.env` (copy from `.env.example`), consumed by `docker-compose.yaml`:
 
-| Variable            | Description                           | Value in `.env.example`  |
-|---------------------|---------------------------------------|--------------------------|
-| `JWT_SECRET`        | HMAC signing secret for access tokens | insecure dev placeholder |
-| `POSTGRES_USER`     | Database user                         | `postgres`               |
-| `POSTGRES_PASSWORD` | Database password                     | `postgres`               |
-
-If a variable is left unset, `docker-compose.yaml` falls back to `taskmanager` /
-`taskmanager` for the Postgres credentials and to the same insecure placeholder for
-`JWT_SECRET`.
-
-`LOG_PATH` (directory for the local log file, defaults to `logs`) is read by
-`logback-spring.xml` but only matters for local runs (`./mvnw spring-boot:run`) -
-it's not part of `.env.example` and isn't passed through by Docker Compose, since
-the `docker` profile logs to stdout only (see
-[Logging](#logging--log-aggregation)).
+| Variable                   | Description                           | Value in `.env.example`  |
+|----------------------------|---------------------------------------|--------------------------|
+| `JWT_SECRET`               | HMAC signing secret for access tokens | insecure dev placeholder |
+| `POSTGRES_USER`            | Database user                         | `postgres`               |
+| `POSTGRES_PASSWORD`        | Database password                     | `postgres`               |
+| `PGADMIN_DEFAULT_EMAIL`    | pgAdmin email                         | `admin@taskmanager.com`  |
+| `PGADMIN_DEFAULT_PASSWORD` | pgAdmin password                      | `admin`                  |
 
 ### Demo data (seed migration)
 

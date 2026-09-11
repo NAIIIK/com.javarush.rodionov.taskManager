@@ -3,9 +3,9 @@ spring:
     name: taskManager
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/taskmanager
-    username: taskmanager
-    password: taskmanager
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB:taskmanager}
+    username: ${POSTGRES_USERNAME:taskmanager}
+    password: ${POSTGRES_PASSWORD:taskmanager}
     driver-class-name: org.postgresql.Driver
     hikari:
       keepalive-time: 60_000
