@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -40,18 +39,16 @@ public class CommentController {
                     ProjectMember record in the task's project, so the user must be a member of that project.
                     """
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Comment created",
-                    content = @Content(schema = @Schema(implementation = CommentResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Comment text is blank or longer than 2000 characters",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "401", description = "Access token is missing or invalid",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "403", description = "The user is not a member of the project that owns this task",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "A task with this id does not exist",
-                    content = @Content(schema = @Schema(implementation = ApiError.class)))
-    })
+    @ApiResponse(responseCode = "201", description = "Comment created",
+            content = @Content(schema = @Schema(implementation = CommentResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Comment text is blank or longer than 2000 characters",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "401", description = "Access token is missing or invalid",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "403", description = "The user is not a member of the project that owns this task",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "404", description = "A task with this id does not exist",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
     @PostMapping
     public ResponseEntity<CommentResponse> addComment(
             @PathVariable UUID taskId,
@@ -68,16 +65,14 @@ public class CommentController {
                     the repository. Available to any member of the task's project.
                     """
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "List of comments (may be empty)",
-                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = CommentResponse.class)))),
-            @ApiResponse(responseCode = "401", description = "Access token is missing or invalid",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "403", description = "The user is not a member of the project that owns this task",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "A task with this id does not exist",
-                    content = @Content(schema = @Schema(implementation = ApiError.class)))
-    })
+    @ApiResponse(responseCode = "200", description = "List of comments (may be empty)",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = CommentResponse.class))))
+    @ApiResponse(responseCode = "401", description = "Access token is missing or invalid",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "403", description = "The user is not a member of the project that owns this task",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "404", description = "A task with this id does not exist",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
     @GetMapping
     public ResponseEntity<List<CommentResponse>> getComments(
             @PathVariable UUID taskId,

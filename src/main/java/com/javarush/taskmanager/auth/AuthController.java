@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -38,14 +37,12 @@ public class AuthController {
                     and immediately issues a token pair (access + refresh).
                     """
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "User created, tokens issued",
-                    content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "409", description = "Email is already taken by another user",
-                    content = @Content(schema = @Schema(implementation = ApiError.class)))
-    })
+    @ApiResponse(responseCode = "200", description = "User created, tokens issued",
+            content = @Content(schema = @Schema(implementation = AuthResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Validation error",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "409", description = "Email is already taken by another user",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
     @SecurityRequirements
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -56,14 +53,12 @@ public class AuthController {
             summary = "Log in with email and password",
             description = "Verifies the credentials and issues a new access/refresh token pair."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Login successful, tokens issued",
-                    content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials",
-                    content = @Content(schema = @Schema(implementation = ApiError.class)))
-    })
+    @ApiResponse(responseCode = "200", description = "Login successful, tokens issued",
+            content = @Content(schema = @Schema(implementation = AuthResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Validation error",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "401", description = "Invalid credentials",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
     @SecurityRequirements
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -77,18 +72,16 @@ public class AuthController {
                     revokes it (single use) and issues a new token pair.
                     """
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Tokens refreshed",
-                    content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = """
-                            Refresh token is blank, not found in the database,
-                            already revoked (including reuse of a used token), or expired
-                            """,
-                    content = @Content(schema = @Schema(implementation = ApiError.class))
-            )
-    })
+    @ApiResponse(responseCode = "200", description = "Tokens refreshed",
+            content = @Content(schema = @Schema(implementation = AuthResponse.class)))
+    @ApiResponse(
+            responseCode = "400",
+            description = """
+                           Refresh token is blank, not found in the database,
+                           already revoked (including reuse of a used token), or expired
+                           """,
+            content = @Content(schema = @Schema(implementation = ApiError.class))
+    )
     @SecurityRequirements
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
@@ -99,11 +92,9 @@ public class AuthController {
             summary = "Log out (revoke a refresh token)",
             description = "Revokes the given refresh token so it can no longer be used to refresh the access token."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Token revoked (or was already revoked/did not exist)"),
-            @ApiResponse(responseCode = "400", description = "Refresh token is blank",
-                    content = @Content(schema = @Schema(implementation = ApiError.class)))
-    })
+    @ApiResponse(responseCode = "204", description = "Token revoked (or was already revoked/did not exist)")
+    @ApiResponse(responseCode = "400", description = "Refresh token is blank",
+            content = @Content(schema = @Schema(implementation = ApiError.class)))
     @SecurityRequirements
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest request) {
