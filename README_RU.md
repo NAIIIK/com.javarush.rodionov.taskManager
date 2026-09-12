@@ -100,7 +100,7 @@ docker compose up --build
 | Сервис        | URL                   | Комментарий                                                             |
 |---------------|-----------------------|-------------------------------------------------------------------------|
 | app           | http://localhost:8080 | само приложение                                                         |
-| pgAdmin       | http://localhost:5050 | логин `admin@taskmanager.local` / `admin`                               |
+| pgAdmin       | http://localhost:5050 | логин `admin@taskmanager.com` / `admin`                               |
 | Kibana        | http://localhost:5601 | интерфейс поиска по логам, см. [Логирование](#логирование-и-сбор-логов) |
 | Elasticsearch | http://localhost:9200 | хранилище логов, без авторизации в dev-конфигурации                     |
 | Logstash      | tcp/5044 (внутренний) | принимает логи от Filebeat                                              |
