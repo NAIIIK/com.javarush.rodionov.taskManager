@@ -97,7 +97,7 @@ This starts:
 | Service       | URL                   | Notes                                                   |
 |---------------|-----------------------|---------------------------------------------------------|
 | app           | http://localhost:8080 | the API itself                                          |
-| pgAdmin       | http://localhost:5050 | login `admin@taskmanager.local` / `admin`               |
+| pgAdmin       | http://localhost:5050 | login `admin@taskmanager.com` / `admin`               |
 | Kibana        | http://localhost:5601 | log search UI, see [Logging](#logging--log-aggregation) |
 | Elasticsearch | http://localhost:9200 | log storage, no auth in dev setup                       |
 | Logstash      | tcp/5044 (internal)   | receives logs from Filebeat                             |
