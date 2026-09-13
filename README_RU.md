@@ -126,8 +126,8 @@ docker compose up --build
 | Переменная                 | Описание                                 | Значение в `.env.example` |
 |----------------------------|------------------------------------------|---------------------------|
 | `JWT_SECRET`               | Секрет для подписи access-токенов (HMAC) | небезопасная dev-заглушка |
-| `POSTGRES_USER`            | Пользователь БД                          | `postgres`                |
-| `POSTGRES_PASSWORD`        | Пароль БД                                | `postgres`                |
+| `POSTGRES_USER`            | Пользователь БД                          | `taskmanager`             |
+| `POSTGRES_PASSWORD`        | Пароль БД                                | `taskmanager`             |
 | `PGADMIN_DEFAULT_EMAIL`    | Эл. почта pgAdmin                        | `admin@taskmanager.com`   |
 | `PGADMIN_DEFAULT_PASSWORD` | Пароль pgAdmin                           | `admin`                   |
 

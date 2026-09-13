@@ -123,8 +123,8 @@ Defined in `.env` (copy from `.env.example`), consumed by `docker-compose.yaml`:
 | Variable                   | Description                           | Value in `.env.example`  |
 |----------------------------|---------------------------------------|--------------------------|
 | `JWT_SECRET`               | HMAC signing secret for access tokens | insecure dev placeholder |
-| `POSTGRES_USER`            | Database user                         | `postgres`               |
-| `POSTGRES_PASSWORD`        | Database password                     | `postgres`               |
+| `POSTGRES_USER`            | Database user                         | `taskmanager`            |
+| `POSTGRES_PASSWORD`        | Database password                     | `taskmanager`            |
 | `PGADMIN_DEFAULT_EMAIL`    | pgAdmin email                         | `admin@taskmanager.com`  |
 | `PGADMIN_DEFAULT_PASSWORD` | pgAdmin password                      | `admin`                  |
 
