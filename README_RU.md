@@ -42,6 +42,10 @@ workflow и оставляют комментарии - всё под защит
   не попадают в лог в открытом виде.
 - **Централизованный сбор логов** - в Docker логи приложения отправляются через
   ELK-стек (Elasticsearch, Logstash, Kibana) для поиска и фильтрации.
+- **Метрики и мониторинг** - Actuator отдаёт метрики Micrometer в формате
+  Prometheus; Prometheus собирает их с приложения, а Grafana визуализирует
+  JVM/HTTP/БД-метрики через готовый dashboard, см. [Метрики и
+  мониторинг](#метрики-и-мониторинг).
 - **Единая обработка исключений** через `@RestControllerAdvice` - консистентные
   JSON-ответы об ошибках со статусом, сообщением, временем и путём запроса.
 
@@ -57,8 +61,9 @@ workflow и оставляют комментарии - всё под защит
 | Сборка           | Maven                                                                                             |
 | Логирование      | SLF4J + Logback (`logback-spring.xml`), кастомный AOP-аспект логирования                          |
 | Доставка логов   | ELK-стек (Elasticsearch, Logstash, Kibana) + Filebeat, JSON-логи через `logstash-logback-encoder` |
+| Метрики          | Micrometer (`micrometer-registry-prometheus`), Prometheus, Grafana (dashboard через provisioning) |
 | Тесты            | JUnit 5, Mockito (unit), Testcontainers + PostgreSQL (интеграционные)                             |
-| Контейнеры       | Docker, Docker Compose (app, Postgres, pgAdmin, ELK-стек)                                         |
+| Контейнеры       | Docker, Docker Compose (app, Postgres, pgAdmin, ELK-стек, Prometheus, Grafana)                    |
 
 ## Структура проекта
 
@@ -100,10 +105,12 @@ docker compose up --build
 | Сервис        | URL                   | Комментарий                                                             |
 |---------------|-----------------------|-------------------------------------------------------------------------|
 | app           | http://localhost:8080 | само приложение                                                         |
-| pgAdmin       | http://localhost:5050 | логин `admin@taskmanager.com` / `admin`                               |
+| pgAdmin       | http://localhost:5050 | логин `admin@taskmanager.com` / `admin`                                 |
 | Kibana        | http://localhost:5601 | интерфейс поиска по логам, см. [Логирование](#логирование-и-сбор-логов) |
 | Elasticsearch | http://localhost:9200 | хранилище логов, без авторизации в dev-конфигурации                     |
 | Logstash      | tcp/5044 (внутренний) | принимает логи от Filebeat                                              |
+| Prometheus    | http://localhost:9090 | собирает метрики с `/actuator/prometheus` каждые 15с                    |
+| Grafana       | http://localhost:3000 | логин `admin` / `admin`, dashboard уже настроен                         |
 | PostgreSQL    | localhost:5432        | –                                                                       |
 
 ### Локально
@@ -130,6 +137,8 @@ docker compose up --build
 | `POSTGRES_PASSWORD`        | Пароль БД                                | `taskmanager`             |
 | `PGADMIN_DEFAULT_EMAIL`    | Эл. почта pgAdmin                        | `admin@taskmanager.com`   |
 | `PGADMIN_DEFAULT_PASSWORD` | Пароль pgAdmin                           | `admin`                   |
+| `GRAFANA_ADMIN_USER`       | Пользователь Grafana                     | `admin`                   |
+| `GRAFANA_ADMIN_PASSWORD`   | Пароль Grafana                           | `admin`                   |
 
 ### Демо-данные (seed-миграция)
 
@@ -195,14 +204,14 @@ Liquibase-ом при старте, в любом окружении) добав
 
 ### Задачи - `/api/projects/{projectId}/tasks`, `/api/tasks/{taskId}`
 
-| Метод  | Путь                              | Описание                                                                              |
-|--------|-----------------------------------|---------------------------------------------------------------------------------------|
-| POST   | `/api/projects/{projectId}/tasks` | Создать задачу (`OWNER`/`MANAGER`)                                                    |
-| GET    | `/api/projects/{projectId}/tasks` | Список задач проекта (участники)                                                      |
-| PATCH  | `/api/tasks/{taskId}/assign-self` | Назначить задачу на себя (любой участник проекта)                                     |
-| PATCH  | `/api/tasks/{taskId}/status`      | Изменить статус задачи (исполнитель либо `OWNER`/`MANAGER`)                           |
-| PATCH  | `/api/tasks/{taskId}`             | Частично обновить название/описание/приоритет/исполнителя/дедлайн (`OWNER`/`MANAGER`) |
-| DELETE | `/api/tasks/{taskId}`             | Удалить задачу вместе с комментариями (`OWNER`/`MANAGER`)                             |
+| Метод  | Путь                              | Описание                                                                                                                                                      |
+|--------|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| POST   | `/api/projects/{projectId}/tasks` | Создать задачу (`OWNER`/`MANAGER`)                                                                                                                            |
+| GET    | `/api/projects/{projectId}/tasks` | Список задач проекта (участники), с опциональной фильтрацией по `status` (через запятую), `dueDateFrom`/`dueDateTo` и/или `overdue` (комбинируются через AND) |
+| PATCH  | `/api/tasks/{taskId}/assign-self` | Назначить задачу на себя (любой участник проекта)                                                                                                             |
+| PATCH  | `/api/tasks/{taskId}/status`      | Изменить статус задачи (исполнитель либо `OWNER`/`MANAGER`)                                                                                                   |
+| PATCH  | `/api/tasks/{taskId}`             | Частично обновить название/описание/приоритет/исполнителя/дедлайн (`OWNER`/`MANAGER`)                                                                         |
+| DELETE | `/api/tasks/{taskId}`             | Удалить задачу вместе с комментариями (`OWNER`/`MANAGER`)                                                                                                     |
 
 ### Комментарии - `/api/tasks/{taskId}/comments`
 
@@ -286,6 +295,25 @@ app (stdout, JSON) → Filebeat → Logstash → Elasticsearch → Kibana
 токенов и любых DTO или объектов, которые их несут (`LoginRequest`,
 `RegisterRequest`, `RefreshRequest`, `AuthResponse`, сырые JWT-строки,
 `CustomUserDetails`).
+
+## Метрики и мониторинг
+
+Actuator + Micrometer отдают метрики приложения в формате Prometheus по адресу
+`/actuator/prometheus` (без аутентификации, как и `/actuator/health` - см.
+[Переменные окружения](#переменные-окружения), если понадобится закрыть этот
+эндпоинт перед деплоем куда-то за пределы локальной разработки).
+
+```
+app (/actuator/prometheus) → Prometheus (сбор каждые 15с) → Grafana
+```
+
+- **Prometheus** (`http://localhost:9090`) собирает метрики с сервиса `app` по
+  конфигу `prometheus/prometheus.yml`.
+- **Grafana** (`http://localhost:3000`, логин `admin`/`admin` по умолчанию) уже
+  идёт с настроенным datasource на Prometheus и готовым dashboard'ом "Task
+  Manager - App Metrics" (`grafana/provisioning/`) - память/CPU/потоки/GC JVM,
+  частота/латентность/ошибки HTTP-запросов и использование пула соединений
+  HikariCP, без ручной настройки.
 
 ## Тесты
 

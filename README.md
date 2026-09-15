@@ -39,6 +39,10 @@ comments - all secured with JWT authentication.
   plain text.
 - **Centralized log aggregation** - in Docker, application logs are shipped through
   an ELK stack (Elasticsearch, Logstash, Kibana) for searching and filtering.
+- **Metrics & monitoring** - Actuator exposes Micrometer metrics in Prometheus
+  format; Prometheus scrapes the app and Grafana visualizes JVM/HTTP/DB metrics
+  through a pre-provisioned dashboard, see [Metrics &
+  monitoring](#metrics--monitoring).
 - **Global exception handling** via `@RestControllerAdvice` - consistent JSON error
   responses with status, message, timestamp, and request path.
 
@@ -54,8 +58,9 @@ comments - all secured with JWT authentication.
 | Build        | Maven                                                                                            |
 | Logging      | SLF4J + Logback (`logback-spring.xml`), custom AOP logging aspect                                |
 | Log shipping | ELK stack (Elasticsearch, Logstash, Kibana) + Filebeat, JSON logs via `logstash-logback-encoder` |
+| Metrics      | Micrometer (`micrometer-registry-prometheus`), Prometheus, Grafana (provisioned dashboard)       |
 | Tests        | JUnit 5, Mockito (unit), Testcontainers + PostgreSQL (integration)                               |
-| Containers   | Docker, Docker Compose (app, Postgres, pgAdmin, ELK stack)                                       |
+| Containers   | Docker, Docker Compose (app, Postgres, pgAdmin, ELK stack, Prometheus, Grafana)                  |
 
 ## Project structure
 
@@ -97,10 +102,12 @@ This starts:
 | Service       | URL                   | Notes                                                   |
 |---------------|-----------------------|---------------------------------------------------------|
 | app           | http://localhost:8080 | the API itself                                          |
-| pgAdmin       | http://localhost:5050 | login `admin@taskmanager.com` / `admin`               |
+| pgAdmin       | http://localhost:5050 | login `admin@taskmanager.com` / `admin`                 |
 | Kibana        | http://localhost:5601 | log search UI, see [Logging](#logging--log-aggregation) |
 | Elasticsearch | http://localhost:9200 | log storage, no auth in dev setup                       |
 | Logstash      | tcp/5044 (internal)   | receives logs from Filebeat                             |
+| Prometheus    | http://localhost:9090 | scrapes `/actuator/prometheus` every 15s                |
+| Grafana       | http://localhost:3000 | login `admin` / `admin`, dashboard pre-provisioned      |
 | PostgreSQL    | localhost:5432        | –                                                       |
 
 ### Run locally
@@ -127,6 +134,8 @@ Defined in `.env` (copy from `.env.example`), consumed by `docker-compose.yaml`:
 | `POSTGRES_PASSWORD`        | Database password                     | `taskmanager`            |
 | `PGADMIN_DEFAULT_EMAIL`    | pgAdmin email                         | `admin@taskmanager.com`  |
 | `PGADMIN_DEFAULT_PASSWORD` | pgAdmin password                      | `admin`                  |
+| `GRAFANA_ADMIN_USER`       | Grafana user                          | `admin`                  |
+| `GRAFANA_ADMIN_PASSWORD`   | Grafana password                      | `admin`                  |
 
 ### Demo data (seed migration)
 
@@ -192,14 +201,14 @@ status codes - the tables below are a quick map, not the full contract.
 
 ### Tasks - `/api/projects/{projectId}/tasks`, `/api/tasks/{taskId}`
 
-| Method | Path                              | Description                                                                       |
-|--------|-----------------------------------|-----------------------------------------------------------------------------------|
-| POST   | `/api/projects/{projectId}/tasks` | Create a task (`OWNER`/`MANAGER`)                                                 |
-| GET    | `/api/projects/{projectId}/tasks` | List tasks in a project (members)                                                 |
-| PATCH  | `/api/tasks/{taskId}/assign-self` | Self-assign to a task (any project member)                                        |
-| PATCH  | `/api/tasks/{taskId}/status`      | Update task status (assignee, or `OWNER`/`MANAGER`)                               |
-| PATCH  | `/api/tasks/{taskId}`             | Partially update title/description/priority/assignee/due date (`OWNER`/`MANAGER`) |
-| DELETE | `/api/tasks/{taskId}`             | Delete a task and its comments (`OWNER`/`MANAGER`)                                |
+| Method | Path                              | Description                                                                                                                                          |
+|--------|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| POST   | `/api/projects/{projectId}/tasks` | Create a task (`OWNER`/`MANAGER`)                                                                                                                    |
+| GET    | `/api/projects/{projectId}/tasks` | List tasks in a project (members), optionally filtered by `status` (comma-separated), `dueDateFrom`/`dueDateTo`, and/or `overdue` (combined via AND) |
+| PATCH  | `/api/tasks/{taskId}/assign-self` | Self-assign to a task (any project member)                                                                                                           |
+| PATCH  | `/api/tasks/{taskId}/status`      | Update task status (assignee, or `OWNER`/`MANAGER`)                                                                                                  |
+| PATCH  | `/api/tasks/{taskId}`             | Partially update title/description/priority/assignee/due date (`OWNER`/`MANAGER`)                                                                    |
+| DELETE | `/api/tasks/{taskId}`             | Delete a task and its comments (`OWNER`/`MANAGER`)                                                                                                   |
 
 ### Comments - `/api/tasks/{taskId}/comments`
 
@@ -278,6 +287,24 @@ Arguments annotated with `@Sensitive` and results of methods annotated with
 passwords, access/refresh tokens, and any DTO or object that carries them
 (`LoginRequest`, `RegisterRequest`, `RefreshRequest`, `AuthResponse`, raw JWT
 strings, `CustomUserDetails`).
+
+## Metrics & monitoring
+
+Actuator + Micrometer expose application metrics in Prometheus text format at
+`/actuator/prometheus` (unauthenticated, like `/actuator/health` - see
+[Environment variables](#environment-variables)).
+
+```
+app (/actuator/prometheus) → Prometheus (scrape every 15s) → Grafana
+```
+
+- **Prometheus** (`http://localhost:9090`) scrapes the `app` service using the
+  config in `prometheus/prometheus.yml`.
+- **Grafana** (`http://localhost:3000`, login `admin`/`admin` by default) comes
+  with the Prometheus datasource and a "Task Manager - App Metrics" dashboard
+  already provisioned (`grafana/provisioning/`) - JVM memory/CPU/threads/GC, HTTP
+  request rate/latency/error rate, and HikariCP connection pool usage, no manual
+  setup required.
 
 ## Testing
 
