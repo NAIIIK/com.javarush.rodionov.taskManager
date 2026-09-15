@@ -2,10 +2,7 @@ package com.javarush.taskmanager.task;
 
 import com.javarush.taskmanager.exception.ApiError;
 import com.javarush.taskmanager.security.CurrentUserId;
-import com.javarush.taskmanager.task.dto.CreateTaskRequest;
-import com.javarush.taskmanager.task.dto.TaskResponse;
-import com.javarush.taskmanager.task.dto.UpdateTaskRequest;
-import com.javarush.taskmanager.task.dto.UpdateTaskStatusRequest;
+import com.javarush.taskmanager.task.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -15,9 +12,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -73,7 +73,10 @@ public class TaskController {
 
     @Operation(
             summary = "List tasks of a project",
-            description = "Returns all tasks of a project."
+            description = """
+                    Returns tasks of a project, optionally filtered by status, due date range, and/or overdue flag.
+                    'overdue' means dueDate is before today AND status is not DONE; it combines with the other filters via AND.
+                    """
     )
     @ApiResponse(responseCode = "200", description = "List of tasks (may be empty)",
             content = @Content(array = @ArraySchema(schema = @Schema(implementation = TaskResponse.class))))
@@ -84,8 +87,13 @@ public class TaskController {
     @GetMapping("/api/projects/{projectId}/tasks")
     public ResponseEntity<List<TaskResponse>> getTasks(
             @PathVariable UUID projectId,
-            @Parameter(hidden = true) @CurrentUserId UUID userId) {
-        return ResponseEntity.ok(taskService.getTasksForProject(projectId, userId));
+            @Parameter(hidden = true) @CurrentUserId UUID userId,
+            @RequestParam(required = false) List<TaskStatus> status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueDateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueDateTo,
+            @RequestParam(required = false) Boolean overdue) {
+        TaskFilter filter = new TaskFilter(status, dueDateFrom, dueDateTo, overdue);
+        return ResponseEntity.ok(taskService.getTasksForProject(projectId, userId, filter));
     }
 
     @Operation(

@@ -7,15 +7,14 @@ import com.javarush.taskmanager.project.member.ProjectAccessGuard;
 import com.javarush.taskmanager.project.member.ProjectMember;
 import com.javarush.taskmanager.project.member.ProjectMemberRepository;
 import com.javarush.taskmanager.project.member.ProjectRole;
-import com.javarush.taskmanager.task.dto.CreateTaskRequest;
-import com.javarush.taskmanager.task.dto.TaskResponse;
-import com.javarush.taskmanager.task.dto.UpdateTaskRequest;
-import com.javarush.taskmanager.task.dto.UpdateTaskStatusRequest;
+import com.javarush.taskmanager.task.dto.*;
+
 import java.util.List;
 import java.util.UUID;
 
 import com.javarush.taskmanager.util.ExceptionMessages;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,9 +57,25 @@ public class TaskService {
     }
 
     @Transactional(readOnly = true)
-    public List<TaskResponse> getTasksForProject(UUID projectId, UUID requesterId) {
+    public List<TaskResponse> getTasksForProject(UUID projectId, UUID requesterId, TaskFilter filter) {
         projectAccessGuard.requireMembership(projectId, requesterId);
-        return taskRepository.findAllByProjectId(projectId).stream()
+
+        Specification<Task> spec = Specification.where(TaskSpecifications.hasProjectId(projectId));
+
+        if (filter.statuses() != null && !filter.statuses().isEmpty()) {
+            spec = spec.and(TaskSpecifications.hasStatusIn(filter.statuses()));
+        }
+        if (filter.dueDateFrom() != null) {
+            spec = spec.and(TaskSpecifications.dueDateFrom(filter.dueDateFrom()));
+        }
+        if (filter.dueDateTo() != null) {
+            spec = spec.and(TaskSpecifications.dueDateTo(filter.dueDateTo()));
+        }
+        if (Boolean.TRUE.equals(filter.overdue())) {
+            spec = spec.and(TaskSpecifications.isOverdue());
+        }
+
+        return taskRepository.findAll(spec).stream()
                 .map(taskMapper::toResponse)
                 .toList();
     }
